@@ -1,6 +1,5 @@
 import { EventEmitter } from 'node:events'
 import { ErrorHandler } from './ErrorHandler.mjs'
-import { AITagExpansion } from './AITagExpansion.mjs'
 import { SmartCache } from './SmartCache.mjs'
 
 /**
@@ -12,7 +11,7 @@ export class EnhancedRecommendations extends EventEmitter {
         super()
         this.debug = false
         this.aiClient = aiClient
-        this.aiTagExpansion = new AITagExpansion(aiClient)
+        // AITagExpansion disabled - server no longer provides valid expansions
         // SemanticContentDiscovery removed - not used
         // TriasLearningSystem removed - learning not needed with AI
         this.cache = new SmartCache({
@@ -20,13 +19,6 @@ export class EnhancedRecommendations extends EventEmitter {
             defaultTTL: 300000, // 5 minutes
             cleanupInterval: 60000 // 1 minute
         })
-        
-        // Track ongoing background refreshes to avoid duplicates
-        this.ongoingRefreshes = new Set();
-        
-        // Minimum time between refreshes for same tags (5 minutes)
-        this.refreshCooldown = new Map();
-        this.minRefreshInterval = 5 * 60 * 1000; // 5 minutes
         
         this.config = {
             defaultLimit: 25,
@@ -40,8 +32,7 @@ export class EnhancedRecommendations extends EventEmitter {
         this.performanceMetrics = {
             requestCount: 0,
             averageResponseTime: 0,
-            cacheHitRate: 0,
-            expansionTime: []
+            cacheHitRate: 0
         }
     }
 
@@ -119,37 +110,10 @@ export class EnhancedRecommendations extends EventEmitter {
                 console.log('Generating recommendations with options:', {userContext, options}, this);
             }
 
-            // 1. Expand user tags using AI semantic analysis with fallback
-            const expansionStart = Date.now()
-            let expandedTags = userContext.tags // Start with original tags
-            
-            // Try to get expanded tags from cache first
-            const cacheKey = this.generateTagCacheKey(userContext.tags)
-            const cachedExpansion = this.cache.get(cacheKey)
-            
-            if (cachedExpansion) {
-                // Use cached expanded tags
-                expandedTags = cachedExpansion
-                if (this.debug) {
-                    console.log('Using cached expanded tags:', expandedTags);
-                }
-                
-                // Only schedule background refresh if cache is stale (older than 30 minutes)
-                // This prevents unnecessary API calls when fresh cache is available
-                const cacheAge = Date.now() - (cachedExpansion._timestamp || 0);
-                if (cacheAge > 30 * 60 * 1000) { // 30 minutes
-                    this.scheduleBackgroundTagRefresh(userContext.tags);
-                }
-            } else {
-                // No cache available - use original tags and update cache in background
-                // Cache miss - using original tags, updating cache in background
-                expandedTags = userContext.tags
-                this.scheduleBackgroundTagRefresh(userContext.tags)
-            }
-            
-            this.performanceMetrics.expansionTime.push(Date.now() - expansionStart)
+            // 1. Use user tags directly (AITagExpansion permanently disabled)
+            const expandedTags = userContext.tags
 
-            // 2. Get data with semantic filtering (EPG for live, multiSearch for VOD)
+            // 2. Get data with filtering (EPG for live, multiSearch for VOD)
             let epgData
             if (options.type === 'vod') {
                 // Use multiSearch for VOD content
@@ -639,87 +603,7 @@ export class EnhancedRecommendations extends EventEmitter {
         }
     }
 
-    /**
-     * Generate cache key for user tags
-     * @param {Object} userTags - User tags
-     * @returns {string} Cache key
-     */
-    generateTagCacheKey(userTags) {
-        const entries = Object.entries(userTags || {})
-        const serialized = entries.length
-            ? entries
-                .map(([key, value]) => {
-                    let formatted = '1.0000'
-                    if (typeof value === 'number' && Number.isFinite(value)) {
-                        formatted = Number(value).toFixed(4)
-                    } else if (typeof value === 'boolean') {
-                        formatted = value ? 'true' : 'false'
-                    } else if (value != null) {
-                        formatted = String(value)
-                    } else {
-                        formatted = 'null'
-                    }
-                    return `${key}:${formatted}`
-                })
-                .sort()
-                .join('|')
-            : '__no_tags__'
-        return `tags:${serialized}`
-    }
 
-    /**
-     * Schedule background tag refresh for future recommendations
-     * @param {Object} userTags - User tags to refresh
-     */
-    scheduleBackgroundTagRefresh(userTags) {
-        const cacheKey = this.generateTagCacheKey(userTags);
-        
-        // Check if refresh is already ongoing for these tags
-        if (this.ongoingRefreshes.has(cacheKey)) {
-            return; // Already refreshing
-        }
-        
-        // Check cooldown period
-        const lastRefresh = this.refreshCooldown.get(cacheKey);
-        const now = Date.now();
-        if (lastRefresh && (now - lastRefresh) < this.minRefreshInterval) {
-            return; // Too soon to refresh again
-        }
-        
-        // Mark as ongoing and set cooldown
-        this.ongoingRefreshes.add(cacheKey);
-        this.refreshCooldown.set(cacheKey, now);
-        
-        // Use setTimeout to avoid blocking the main thread
-        setTimeout(async () => {
-            try {
-                // Starting background tag refresh...
-                
-                const expandedTags = await this.aiTagExpansion.expandUserTags(
-                    userTags,
-                    {
-                        maxExpansions: 50, // More expansions in background
-                        similarityThreshold: 0.6,
-                        diversityBoost: true
-                    }
-                )
-                
-                // Cache the expanded tags
-                this.cache.set(cacheKey, expandedTags, ['tags', 'expansion'], 3, 24 * 60 * 60 * 1000) // 24h TTL
-                
-                // Background tag refresh completed and cached
-                
-                // Emit event to notify that recommendations can be refreshed
-                this.emit('tagsExpanded', { userTags, expandedTags })
-                
-            } catch (error) {
-                console.warn('Background tag refresh failed:', error.message)
-            } finally {
-                // Clean up
-                this.ongoingRefreshes.delete(cacheKey);
-            }
-        }, 1000) // Start after 1 second
-    }
 
     /**
      * Normalize tag scores to ensure diversity across the user's interest spectrum

@@ -97,6 +97,16 @@ class MediaPlayerAdapterHTML5TS extends MediaPlayerAdapterHTML5Video {
 				return
 			}
 			
+			// Silently ignore InvalidStateError from autoCleanupSourceBuffer
+			// This happens when mpegts.js accesses a SourceBuffer that was cleaned up
+			// to prevent memory leaks. The error is harmless - playback continues normally
+			// after the library recovers internally. Filtering avoids log noise and
+			// unnecessary recovery cycles that could degrade performance.
+			const errMsg = String(err?.message || err || '')
+			if (errMsg.includes('InvalidStateError') || errMsg.includes('Failed to read the \'buffered\' property')) {
+				return
+			}
+			
 			const t = this.time()
 			if(t != this.lastErrorTime) {
 				this.errorsCount = 0
@@ -174,6 +184,8 @@ class MediaPlayerAdapterHTML5TS extends MediaPlayerAdapterHTML5Video {
 							try {
 								this.isReloading = true
 								this.reload(() => {
+									// Guard against instance being destroyed during reload
+									if (!this.mpegts && !this.active) return
 									this.errorsCount = c
 									this.isReloading = false
 									this.isHandlingError = false
@@ -181,12 +193,16 @@ class MediaPlayerAdapterHTML5TS extends MediaPlayerAdapterHTML5Video {
 								return // Exit early, reload will handle cleanup
 							} catch (reloadError) {
 								console.error('MPEGTS: Error during reload fallback:', reloadError)
-								this.emit('error', 'Error recovery and reload failed', true)
-								this.setState('')
+								if (this.mpegts || this.active) {
+									this.emit('error', 'Error recovery and reload failed', true)
+									this.setState('')
+								}
 							}
 						} else {
-							this.emit('error', 'Error recovery failed', true)
-							this.setState('')
+							if (this.mpegts || this.active) {
+								this.emit('error', 'Error recovery failed', true)
+								this.setState('')
+							}
 						}
 					} finally {
 						// Clear flag after a delay to allow operations to complete
@@ -199,7 +215,10 @@ class MediaPlayerAdapterHTML5TS extends MediaPlayerAdapterHTML5Video {
 				// Execute recovery asynchronously
 				performRecovery().catch(finalError => {
 					console.error('MPEGTS: Unexpected error in recovery process:', finalError)
-					this.isHandlingError = false
+					// Only reset flag if instance still exists (avoid race condition on destroy)
+					if (this.mpegts || this.active) {
+						this.isHandlingError = false
+					}
 				})
 			}
 			this.lastErrorTime = t

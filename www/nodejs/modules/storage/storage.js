@@ -80,7 +80,6 @@ class StorageTools extends EventEmitter {
         this.writeQueue = new Map(); // key -> queue of write operations
         this.writeQueueLocks = new Map(); // key -> lock for queue operations
         
-        this.load();
         if (!this.opts.main)
             return;
         this.lastSaveTime = (Date.now() / 1000)
@@ -90,6 +89,10 @@ class StorageTools extends EventEmitter {
         // Add consistency checker for main process (runs every 5 minutes)
         this.consistencyLimiter = new Limiter(() => this.checkConsistency(), { intervalMs: 300000, initialDelay: 60000, async: true })
         this.consistencyIntervalId = null; // Track the interval ID
+        
+        // Load index only after all limiters are initialized (prevents race condition where
+        // load() calls save() which accesses saveLimiter before it's created)
+        this.load();
         
         process.nextTick(() => {
             onexit(() => this.saveSync());
@@ -870,6 +873,11 @@ class StorageIndex extends StorageHolding {
     async save(options = {}) {
         if (!this.opts.main) return // Only main process should save index
         
+        // Guard against saveLimiter not being initialized yet (constructor race condition)
+        if (!this.saveLimiter) {
+            return this._performSave()
+        }
+        
         // Use saveLimiter by default, unless skipLimiter is set
         if (options.skipLimiter) {
             return this._performSave()
@@ -945,6 +953,13 @@ class StorageIndex extends StorageHolding {
             return
         this.lastSaveTime = (Date.now() / 1000)
         
+        // Ensure directory exists (avoids ENOENT during shutdown)
+        try {
+            fs.mkdirSync(this.opts.folder, { recursive: true });
+        } catch (e) {
+            // Ignore if directory already exists
+        }
+        
         // Read current index from disk and merge with memory
         const indexPath = this.opts.folder +'/'+ this.indexFile;
         let diskIndex = {};
@@ -965,6 +980,12 @@ class StorageIndex extends StorageHolding {
         // Add version to index before saving
         const indexWithVersion = { ...mergedIndex, _version: STORAGE_INDEX_VERSION };
         
+        // Ensure directory exists before writing (prevents ENOENT during shutdown)
+        try {
+            fs.mkdirSync(this.opts.folder, { recursive: true });
+        } catch (e) {
+            // Ignore if directory already exists
+        }
         const tmp = this.opts.folder + '/' + parseInt(Math.random() * 100000) + '.commit'
         fs.writeFileSync(tmp, JSON.stringify(indexWithVersion), 'utf8')
         try {
@@ -2121,10 +2142,11 @@ class StorageIO extends StorageIndex {
                     // Temp file doesn't exist or can't be deleted, ignore
                 }
                 
-                // Retry logic for specific errors
-                if ((err.code === 'ENOENT' || err.message.includes('Temporary file') || err.message.includes('empty') || err.message.includes('deleted')) && attempt < maxRetries - 1) {
-                    console.warn(`Storage write attempt ${attempt + 1} failed for ${path.basename(file)}, retrying...`, err.message);
-                    await new Promise(resolve => setTimeout(resolve, 100 * (attempt + 1))); // Exponential backoff
+                // Retry logic for specific errors (including EBUSY for locked files and EPERM for permissions)
+                if ((err.code === 'ENOENT' || err.code === 'EBUSY' || err.code === 'EPERM' || err.message.includes('Temporary file') || err.message.includes('empty') || err.message.includes('deleted')) && attempt < maxRetries - 1) {
+                    const delay = err.code === 'EBUSY' || err.code === 'EPERM' ? 200 * (attempt + 1) : 100 * (attempt + 1);
+                    console.warn(`Storage write attempt ${attempt + 1} failed for ${path.basename(file)} (${err.code || err.message}), retrying in ${delay}ms...`);
+                    await new Promise(resolve => setTimeout(resolve, delay)); // Exponential backoff
                     continue;
                 }
                 
@@ -2351,8 +2373,8 @@ class Storage extends StorageIO {
     // Override lock method to track lock times
     lock(key, write) {
         const lockPromise = new Promise((resolve, reject) => {
-            // Reduced timeout values to prevent long waits
-            const timeoutMs = write ? 10000 : 15000; // 10s for writes, 15s for reads
+            // Timeout values balanced to prevent deadlocks without false positives
+            const timeoutMs = write ? 30000 : 30000; // 30s for both writes and reads
             
             // Add timeout to prevent deadlocks
             const timeout = setTimeout(() => {
@@ -2360,6 +2382,8 @@ class Storage extends StorageIO {
                 // Don't reject immediately, try to clean up first
                 this.cleanupLock(key);
                 reject(new Error(`Mutex acquisition timeout after ${timeoutMs}ms`));
+                // Log diagnostic info for debugging contention
+                console.warn(`Mutex timeout diagnostic: key=${key}, write=${write}, timeout=${timeoutMs}ms`);
             }, timeoutMs);
             
             if (this.locked[key]) {

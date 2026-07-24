@@ -211,7 +211,7 @@ class StreamerFFmpeg extends EventEmitter {
                 url = decodeEntities(url)
             }
             url = url.split('?')[0].split('#')[0];
-            const root = path.resolve(this.opts.workDir, this.uid);
+            const root = path.resolve(this.opts.workDir, String(this.uid));
             const resolvedPath = path.resolve(root, url);
             if (!resolvedPath.startsWith(root)) {
                 throw new Error('Invalid file path: outside of root directory');

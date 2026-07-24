@@ -463,6 +463,10 @@ class StreamerClientVideoAspectRatio extends StreamerState {
         main.menu.on('resize', () => this.resize())
         this.on('stop', () => {
             this.aspectRatioList = this.aspectRatioList.filter(m => typeof(m.custom) == 'undefined')
+            // Reset to default ratios if list becomes empty after filtering
+            if (!this.aspectRatioList.length) {
+                this.aspectRatioList = [{h: 16, v: 9}, {h: 4, v: 3}, {h: 16, v: 10}, {h: 21, v: 9}];
+            }
             this.activeAspectRatio = this.aspectRatioList[0]
         })
     }

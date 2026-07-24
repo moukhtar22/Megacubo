@@ -913,7 +913,7 @@ class Streamer extends StreamerGoNext {
         }
         
         // Otherwise, search in lists using terms or name
-        const listsReady = await global.lists.ready(10);
+        const listsReady = await global.lists.ready(15);
         if (listsReady !== true) {
             throw new Error(global.lang.WAIT_LISTS_READY);
         }
@@ -1151,7 +1151,11 @@ class Streamer extends StreamerGoNext {
                     if (Array.isArray(tms)) tms = tms.join(' ')
                     e.url = mega.build(name, { terms: tms });
                 }
-                this.play(e)
+                this.play(e).catch(err => {
+                    if (err !== 'another play intent in progress') {
+                        console.error('Streamer.play error:', err);
+                    }
+                })
             }
             return true
         }

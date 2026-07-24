@@ -239,8 +239,10 @@ class Lookup {
     let resultArray = Array.isArray(fastResult) ? fastResult : [fastResult];
     resultArray = [...new Set(resultArray)];
 
-    this.promises[hostname].resolve();
-    delete this.promises[hostname];
+    resolve();
+    if (this.promises[hostname]) {
+        delete this.promises[hostname];
+    }
 
     if (options.debug) {
       console.log('lookup', hostname, resultArray);

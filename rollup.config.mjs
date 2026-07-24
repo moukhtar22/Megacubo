@@ -87,7 +87,8 @@ const external = [
   'electron',
   /.+\.(node|native)$/,
   /premium\./,
-  'bytenode' // Must be external - modifies Node.js module system at runtime
+  'bytenode', // Must be external - modifies Node.js module system at runtime
+  'jexidb'   // Database engine - loaded at runtime to reduce bundle size
 ];
 const outputs = [];
 

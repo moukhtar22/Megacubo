@@ -340,9 +340,18 @@ export class Parser extends EventEmitter {
             return '';
         }
         
-        if (s.length === 3 && s.toLowerCase().trim() === 'n/a') {
+        s = s.trim();
+        
+        if (s.length === 3 && s.toLowerCase() === 'n/a') {
             return '';
         }
+        
+        // Normalize spaces around '/' separators across the whole string
+        s = s.replace(/\s*\/\s*/g, '/');
+        
+        // Remove leading/trailing slashes introduced by normalization
+        if (s.startsWith('/')) s = s.substr(1);
+        if (s.endsWith('/')) s = s.substr(0, s.length - 1);
         
         if (!s.includes('/') && s.match(regexes['group-separators'])) {
             s = s.replace(regexes['group-separators'], '/');

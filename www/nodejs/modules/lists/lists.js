@@ -669,6 +669,21 @@ class Lists extends ListsEPGTools {
         return listUrl;
     }
     handleListsChange() {
+        // Deduplicate lists config by URL (keeps first occurrence)
+        const rawLists = config.get('lists')
+        if (Array.isArray(rawLists)) {
+            const seen = new Set()
+            const deduped = rawLists.filter(l => {
+                const url = l?.[1]
+                if (!url || seen.has(url)) return false
+                seen.add(url)
+                return true
+            })
+            if (deduped.length !== rawLists.length) {
+                config.set('lists', deduped)
+            }
+        }
+
         const myLists = config.get('lists').map(l => l[1]);
         const newLists = myLists.filter(u => !this.myLists.includes(u));
         const rmLists = this.myLists.filter(u => !myLists.includes(u));
@@ -1538,6 +1553,10 @@ class Lists extends ListsEPGTools {
     getMyLists() {
         const hint = this.communityListsAmount;
         return config.get('lists').map(c => {
+            if (!Array.isArray(c) || c.length < 2) {
+                console.warn('getMyLists: skipping invalid list entry', c);
+                return null;
+            }
             const url = c[1];
             const e = {
                 name: c[0],

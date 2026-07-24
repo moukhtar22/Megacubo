@@ -1286,6 +1286,8 @@ export default class EPGManager extends EPGPaginateChannelsList {
           clearTimeout(timeoutId)
           timeoutId = null
         }
+        // Guard against epg being destroyed/garbage collected before cleanup runs
+        if (!epg) return
         // Remove event listeners
         epg.removeListener('stateChange', onStateChange)
         epg.removeListener('error', onError)

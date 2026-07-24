@@ -1,7 +1,6 @@
 import { EventEmitter } from 'node:events'
 import { ErrorHandler } from './ErrorHandler.mjs'
 import { EnhancedRecommendations } from './EnhancedRecommendations.mjs'
-import { AITagExpansion } from './AITagExpansion.mjs'
 import { SmartCache } from './SmartCache.mjs'
 import { AIRecommendationEngine } from './AIRecommendationEngine.mjs'
 
@@ -15,7 +14,6 @@ class SmartRecommendationsModule extends EventEmitter {
         this.readyState = 0
         this.aiClient = null
         this.enhancedRecommendations = null
-        this.aiTagExpansion = null
         this.cache = null
         this.config = {
             enabled: true,
@@ -43,11 +41,10 @@ class SmartRecommendationsModule extends EventEmitter {
             }
 
             // Initialize components with AI Client (importing inline to avoid circular deps)
-            const { AITagExpansion } = await import('./AITagExpansion.mjs')
             const { EnhancedRecommendations } = await import('./EnhancedRecommendations.mjs')
             
             this.enhancedRecommendations = new EnhancedRecommendations(this.aiClient)
-            this.aiTagExpansion = new AITagExpansion(this.aiClient)
+            // AITagExpansion disabled - server no longer provides valid expansions
             // Learning removed - AI is already trained
             this.cache = new SmartCache({
                 maxSize: this.config.cacheSize,
@@ -122,62 +119,14 @@ class SmartRecommendationsModule extends EventEmitter {
     // recordUserFeedback() removed - learning not needed with AI
 
     /**
-     * Expand user tags using semantic analysis
-     * @param {Object} userTags - User tags
-     * @param {Object} options - Expansion options
-     * @returns {Promise<Object>} Expanded tags
-     */
-    async expandUserTags(userTags, options = {}) {
-        if (!this.isReady()) {
-            return userTags // Return original tags if not ready
-        }
-
-        try {
-            return await this.aiTagExpansion.expandUserTags(userTags, options)
-        } catch (error) {
-            ErrorHandler.warn('Tag expansion failed:', error)
-            return userTags
-        }
-    }
-
-    /**
-     * Expand tags using AI (compatibility method similar to EPGManager.expandTags)
+     * Expand tags (disabled - server no longer provides valid expansions)
      * @param {Object} tags - Tags to expand
      * @param {Object} options - Options {as: 'objects'|'default', amount: number}
      * @returns {Promise<Array|Object>} Related tags
      */
     async expandTags(tags, options = {}) {
-        if (!this.isReady()) {
-            return options.as === 'objects' ? [] : {}
-        }
-
-        try {
-            // Use AI tag expansion instead of Trias
-            const expandedTags = await this.expandUserTags(tags, {
-                maxExpansions: options.amount || 20,
-                similarityThreshold: options.threshold || 0.6,
-                diversityBoost: true
-            })
-
-            // Handle empty results
-            if (!expandedTags || Object.keys(expandedTags).length === 0) {
-                return options.as === 'objects' ? [] : {}
-            }
-
-            // Convert to requested format
-            if (options.as === 'objects') {
-                return Object.entries(expandedTags).map(([category, score]) => ({
-                    category: category.toLowerCase(),
-                    score
-                }))
-            }
-
-            // Return as object (default)
-            return expandedTags
-        } catch (error) {
-            ErrorHandler.warn('expandTags failed:', error)
-            return options.as === 'objects' ? [] : {}
-        }
+        // AITagExpansion permanently disabled - return empty
+        return options.as === 'objects' ? [] : {}
     }
 
     // discoverSimilarContent() removed - SemanticContentDiscovery not used
@@ -193,7 +142,6 @@ class SmartRecommendationsModule extends EventEmitter {
 
         return {
             enhancedRecommendations: this.enhancedRecommendations.getPerformanceMetrics(),
-            aiTagExpansion: this.aiTagExpansion?.getStats?.() || {},
             cache: this.cache.getStats()
         }
     }
@@ -209,7 +157,6 @@ class SmartRecommendationsModule extends EventEmitter {
             aiClientAvailable: !!this.aiClient,
             components: {
                 enhancedRecommendations: !!this.enhancedRecommendations,
-                aiTagExpansion: !!this.aiTagExpansion,
                 cache: !!this.cache
             },
             aiClientStats: this.aiClient?.getStats() || {},
@@ -280,7 +227,6 @@ class SmartRecommendationsModule extends EventEmitter {
             }
             
             this.enhancedRecommendations = null
-            this.aiTagExpansion = null
             this.cache = null
             this.aiClient = null
             
@@ -304,6 +250,5 @@ export default smartRecommendations
 export {
     EnhancedRecommendations,
     AIRecommendationEngine,
-    AITagExpansion,
     SmartCache
 }

@@ -364,27 +364,38 @@ class IconServerStore extends IconSearch {
         const suffix = 'data:image/png;base64,';
         if (String(url).startsWith(suffix)) {            
             const key = this.key(url);
-            const buffer = Buffer.from(url.substr(suffix.length), 'base64');
-            const storageFile = storage.resolve('icons-cache-' + key, 'dat');
-            
-            // Save buffer directly to file and register path in storage
-            await storage.set('icons-cache-' + key, buffer, {ttl: this.ttlCache });
-            this.opts.debug && console.log('FETCHED ' + url + ' => ' + storageFile);
-            const ret = await this.validateFile(storageFile);
-            
-            // Use canvas-based transparency detection for more accuracy
-            let alpha = ret == 2;
-            if (alpha && ret == 2) {
-                try {
-                    const canvasResult = await imp.hasTransparency(storageFile);
-                    alpha = canvasResult;
-                } catch (err) {
-                    console.log('Canvas transparency check failed, using file-based detection:', err.message);
-                    // Keep the file-based detection as fallback
-                }
+            // Dedup base64 icons to prevent EBUSY from concurrent writes
+            if (this.activeDownloads[url]) {
+                return this.activeDownloads[url];
             }
-            
-            return { key, file: storageFile, alpha };
+            this.activeDownloads[url] = (async () => {
+                const buffer = Buffer.from(url.substr(suffix.length), 'base64');
+                const storageFile = storage.resolve('icons-cache-' + key, 'dat');
+                
+                // Save buffer directly to file and register path in storage
+                await storage.set('icons-cache-' + key, buffer, {ttl: this.ttlCache });
+                this.opts.debug && console.log('FETCHED ' + url + ' => ' + storageFile);
+                const ret = await this.validateFile(storageFile);
+                
+                // Use canvas-based transparency detection for more accuracy
+                let alpha = ret == 2;
+                if (alpha && ret == 2) {
+                    try {
+                        const canvasResult = await imp.hasTransparency(storageFile);
+                        alpha = canvasResult;
+                    } catch (err) {
+                        console.log('Canvas transparency check failed, using file-based detection:', err.message);
+                        // Keep the file-based detection as fallback
+                    }
+                }
+                
+                return { key, file: storageFile, alpha };
+            })();
+            try {
+                return await this.activeDownloads[url];
+            } finally {
+                delete this.activeDownloads[url];
+            }
         }
         if (typeof(url) != 'string' || !url.includes('//')) {
             throw 'bad url ' + stringify(url);

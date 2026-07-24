@@ -239,14 +239,14 @@ class TermsHandler {
             );
         }
 
-        const nTerms = needleTerms.filter(t => !t.startsWith('-'));
-        const sTerms = stackTerms.filter(t => !t.startsWith('-'));
+        const nTerms = needleTerms.filter(t => typeof t === 'string' && !t.startsWith('-'));
+        const sTerms = stackTerms.filter(t => typeof t === 'string' && !t.startsWith('-'));
         const weakTerms = this.stopWords;
 
         // Check for exclude terms
         if (
-            needleTerms.some(t => t.startsWith('-') && sTerms.includes(t.slice(1))) ||
-            stackTerms.some(t => t.startsWith('-') && nTerms.includes(t.slice(1)))
+            needleTerms.some(t => typeof t === 'string' && t.startsWith('-') && sTerms.includes(t.slice(1))) ||
+            stackTerms.some(t => typeof t === 'string' && t.startsWith('-') && nTerms.includes(t.slice(1)))
         ) {
             return 0;
         }

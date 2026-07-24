@@ -408,7 +408,7 @@ class SmartRecommendationsCompatibility extends EventEmitter {
 
             // Add VOD-specific options
             if (type === 'vod') {
-                recommendationOptions.type = 'video'
+                recommendationOptions.type = 'vod'
                 recommendationOptions.group = group
                 recommendationOptions.typeStrict = typeStrict
             }
@@ -970,7 +970,7 @@ class SmartRecommendationsCompatibility extends EventEmitter {
                 type: 'group',
                 details: global.lang.CATEGORY_MOVIES_SERIES,
                 hookId,
-                renderer: this.getEntriesWithSpecials.bind(this, null, 25, { type: 'vod' })
+                renderer: this.getEntriesWithSpecials.bind(this, null, 25, { type: 'vod', allowGenerate: true, specials: true })
             }
 
             if (entries.some(e => e.hookId === entry.hookId)) {
@@ -2414,19 +2414,6 @@ class SmartRecommendationsCompatibility extends EventEmitter {
             ErrorHandler.warn('expandTags failed:', error.message)
             return options.as === 'objects' ? [] : {}
         }
-    }
-
-    /**
-     * Expand user tags (delegates to internal smartRecommendations)
-     * @param {Object} userTags - User tags
-     * @param {Object} options - Expansion options
-     * @returns {Promise<Object>} Expanded tags
-     */
-    async expandUserTags(userTags, options = {}) {
-        if (!this.initialized || !this.smartRecommendations) {
-            return userTags
-        }
-        return this.smartRecommendations.expandUserTags(userTags, options)
     }
 
     /**

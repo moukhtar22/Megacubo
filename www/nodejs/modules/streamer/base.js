@@ -269,7 +269,11 @@ class StreamerBase extends StreamerTools {
         let data = this.active ? this.active.data : this.lastActiveData;
         if (data) {
             this.stop();
-            process.nextTick(() => this.play(data));
+            process.nextTick(() => this.play(data).catch(err => {
+                if (err !== 'another play intent in progress') {
+                    console.error('StreamerBase.play error:', err);
+                }
+            }));
         }
     }
     async typeMismatchCheck(info) {
@@ -409,6 +413,7 @@ class StreamerTracks extends StreamerThrottling {
             return opt;
         });
         let names = opts.map(o => o.text.split(sep));
+        if (!names.length || !names[0]) return;
         for (let i = 0; i < names[0].length; i++) {
             if (names.slice(1).map(n => n[i] || '').every(n => n == names[0][i])) {
                 names.forEach((n, j) => {

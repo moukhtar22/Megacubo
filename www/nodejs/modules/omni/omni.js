@@ -23,7 +23,7 @@ class OMNI extends EventEmitter {
                     global.menu.open([lang.BOOKMARKS, entry.name].join('/')).catch(e => global.menu.displayErr(e));
                     return
                 } else {                        
-                    global.streamer.play(entry)
+                    global.streamer.play(entry).catch(() => {})
                     renderer.ui.emit('menu-playing-close')
                     return
                 }
@@ -75,7 +75,7 @@ class OMNI extends EventEmitter {
             config.set('open-url', url);
             await global.lists.ready()
             osd.hide('omni')
-            await global.streamer.play(e)
+            await global.streamer.play(e).catch(() => {})
         } catch (e) {
             console.error(e)
             osd.hide('omni')

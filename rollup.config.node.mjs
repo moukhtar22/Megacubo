@@ -43,6 +43,9 @@ const external = [
   /premium\./,
   'bytenode' // Must be external - modifies Node.js module system at runtime
 ];
+
+// Path mapping for vendor bundle (jexidb bundled into vendor.js)
+const vendorPath = { 'jexidb': './vendor.js' };
 const outputs = [];
 
 // Plugin to resolve node:sqlite to a mock module (prevents external dependency warning)
@@ -214,6 +217,7 @@ makeNodeBundle({
     file: 'www/nodejs/dist/main.js', 
     inlineDynamicImports: true, 
     sourcemap: false,
+    paths: vendorPath,
     // Polyfill Web APIs for Node.js < 20
     banner: `
 // Polyfill Web APIs for undici (node-fetch wrapper)
@@ -242,11 +246,32 @@ if (typeof globalThis.File === 'undefined' || typeof globalThis.Blob === 'undefi
   ]
 });
 
+const workerExternals = [
+  'electron',
+  /.+\.(node|native)$/,
+  'jexidb'
+];
+
+// Shared output config for worker bundles (map jexidb to vendor.js)
+const workerOutput = { 
+  format: 'cjs', 
+  inlineDynamicImports: true, 
+  sourcemap: true,
+  paths: vendorPath
+};
+
+// Vendor bundle - built first: bundles jexidb so other bundles can import from vendor.js
+makeNodeBundle({
+  input: 'www/nodejs/vendor.mjs',
+  output: { format: 'cjs', file: 'www/nodejs/dist/vendor.js', inlineDynamicImports: true, sourcemap: false },
+  babelOpts: nodeBabelOpts
+});
+
 makeNodeBundle({
   input: 'www/nodejs/electron.mjs',
-  output: { format: 'cjs', file: 'www/nodejs/dist/electron.js', inlineDynamicImports: true, sourcemap: true },
+  output: { ...workerOutput, file: 'www/nodejs/dist/electron.js' },
   babelOpts: nodeBabelOpts,
-  externals: ['electron', /.+\.(node|native)$/]
+  externals: workerExternals
 });
 
 [
@@ -260,9 +285,9 @@ makeNodeBundle({
   const isLargeFile = file.includes('EPGManager.js');
   makeNodeBundle({
     input: `www/nodejs/${file}`,
-    output: { format: 'cjs', file: `www/nodejs/dist/${outputFile}`, inlineDynamicImports: true, sourcemap: true },
+    output: { ...workerOutput, file: `www/nodejs/dist/${outputFile}` },
     babelOpts: nodeBabelOpts,
-    externals: ['electron', /.+\.(node|native)$/],
+    externals: workerExternals,
     isLargeFile
   });
 });
@@ -270,9 +295,9 @@ makeNodeBundle({
 if (fs.existsSync('www/nodejs/modules/premium/premium.js')) {
   makeNodeBundle({
     input: 'www/nodejs/modules/premium/premium.js',
-    output: { format: 'cjs', file: 'www/nodejs/dist/premium.js', inlineDynamicImports: true, sourcemap: true },
+    output: { ...workerOutput, file: 'www/nodejs/dist/premium.js' },
     babelOpts: nodeBabelOpts,
-    externals: ['electron', /.+\.(node|native)$/]
+    externals: workerExternals
   });
 }
 

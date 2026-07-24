@@ -76,7 +76,7 @@ class History extends EntriesGroup {
                 console.log('resuming', es);
                 if (es.length) {
                     console.log('resuming', es[0], es)
-                    global.streamer.play(es[0])
+                    global.streamer.play(es[0]).catch(() => {})
                 }
             }
         });

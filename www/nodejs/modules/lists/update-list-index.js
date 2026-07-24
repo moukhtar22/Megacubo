@@ -390,6 +390,7 @@ class UpdateListIndex extends EventEmitter {
                                         }
                                     }
 
+                                    if (writeStream.destroyed || writeStream.writableEnded) return
                                     const canWrite = writeStream.write(chunk)
                                     bytesWritten += chunk.length
                                     
@@ -2122,11 +2123,8 @@ class UpdateListIndex extends EventEmitter {
                 return
             }
 
-            const groupParts = g.split('/').filter(part => part && part.trim() !== '')
-            const cleanGroupName = groupParts.length > 0 ? groupParts[groupParts.length - 1] : g
-
             ret[type].push({
-                name: cleanGroupName,
+                name: g,
                 icon: iconCandidate || undefined
             })
         })

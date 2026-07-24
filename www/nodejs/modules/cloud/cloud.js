@@ -348,7 +348,7 @@ class CloudConfiguration extends EventEmitter {
                 // fetch() already handles saving to cache internally
                 const result = await Promise.race([
                     this.fetch(key, opts),
-                    new Promise((_, reject) => setTimeout(() => reject(new Error('Fetch timeout')), 10000))
+                    new Promise((_, reject) => setTimeout(() => reject(new Error('Fetch timeout')), 15000))
                 ])
                 return result
             } catch (fetchError) {

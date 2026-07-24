@@ -394,7 +394,7 @@ class ChannelsEPG extends ChannelsData {
                 icon,
                 url,
                 terms: { name: terms, group: [] }
-            });
+            }).catch(() => {});
         } else {
             let text = lang.START_DATE + ': ' + moment(start * 1000).format('L LT');
             if (programme.categories && programme.categories.length) {
@@ -1211,7 +1211,7 @@ class Channels extends ChannelsKids {
             });
             if (autoplay) {
                 if (streams.length) {
-                    global.streamer.play(e, streams);
+                    global.streamer.play(e, streams).catch(() => {});
                     return -1;
                 } else {
                     throw lang.NONE_STREAM_FOUND;
@@ -1229,7 +1229,7 @@ class Channels extends ChannelsKids {
                             data.name = e.name;
                             const freshStreams = await this.get(terms)
                             const mergedStreams = this.mergeStreams(streams, freshStreams);
-                            global.streamer.play(data, mergedStreams);
+                            global.streamer.play(data, mergedStreams).catch(() => {});
                             this.watchNowAuto = menu.path;
                         }
                     })
@@ -1723,6 +1723,30 @@ class Channels extends ChannelsKids {
         // Performance optimization: Apply parental filter early to reduce processing
         groups = this.applyParentalFilter(groups, acpolicy);
 
+        // Remove standalone groups whose name matches the last segment of a nested group
+        // (e.g. standalone '1ª TEMPORADA' is removed when 'AGENTE 86/1ª TEMPORADA' exists)
+        const nestedLeaves = new Set();
+        const seasonNameRe = /^(\d+[ª°]?\s*(TEMPORADA|SEASON|TEMP|SERIE|SÉRIE)|S\d{2}|T\d{2}|(TEMPORADA|SEASON)\s+\d+)$/i;
+        groups.forEach(g => {
+            const parts = (g.group || '').split('/');
+            if (parts.length > 1) {
+                nestedLeaves.add(parts[parts.length - 1].trim().toLowerCase());
+            }
+        });
+        if (nestedLeaves.size > 0) {
+            groups = groups.filter(g => {
+                const isStandalone = !(g.group || '').includes('/');
+                const nameLower = (g.name || '').trim().toLowerCase();
+                if (!nameLower) return true;
+                // Remove standalone groups whose name is a duplicate of a nested leaf
+                if (isStandalone && nestedLeaves.has(nameLower)) return false;
+                // Also remove nested groups whose last segment looks like a season name
+                // (they clutter the top level; the parent series is shown via details)
+                if (!isStandalone && seasonNameRe.test(nameLower)) return false;
+                return true;
+            });
+        }
+
         // Performance optimization: Async group processing with batching
         const groupToEntry = (group) => {
             const name = group.name;
@@ -1824,8 +1848,17 @@ class Channels extends ChannelsKids {
             });
 
             if (!Array.isArray(entries) || entries.length === 0) {
-                return [];
+                // If no direct entries, still check for sub-groups
+                entries = [];
             }
+
+            // Find sub-groups (e.g. seasons) nested under this group
+            // e.g. for group 'AGENTE 86', find 'AGENTE 86/1ª TEMPORADA'
+            const groupPrefix = (group.group || '') + '/'
+            const allGroups = await global.lists.groups(['series', 'vod'], false).catch(() => [])
+            const subGroups = allGroups.filter(g => {
+                return g.url === group.url && g.group.startsWith(groupPrefix) && g.group !== group.group
+            })
 
             console.warn('entries before chunking', entries.length);
 
@@ -1855,17 +1888,42 @@ class Channels extends ChannelsKids {
             console.warn('entries after filtering and sorting', processedEntries.length);
 
             // Performance optimization: Conditional deepify
-            try {
-                const deepEntries = await global.lists.tools.deepify(processedEntries, { source: group.url }).catch(err => {
-                    console.error('Deepify error in renderGroupEntries:', err);
-                    return processedEntries;
-                });
-                if (Array.isArray(deepEntries)) {
-                    console.warn('entries after deepify', deepEntries.length, deepEntries);
-                    processedEntries = deepEntries.length === 1 ? deepEntries[0].entries : deepEntries;
+            // Skip deepify for sub-groups (those whose group path already has '/')
+            // because all entries are already scoped to that exact group — deepify
+            // would try to re-nest them and create conflicting 'path' properties
+            const isSubGroup = (group.group || '').includes('/')
+            if (!isSubGroup && processedEntries.length > 0) {
+                try {
+                    const deepEntries = await global.lists.tools.deepify(processedEntries, { source: group.url }).catch(err => {
+                        console.error('Deepify error in renderGroupEntries:', err);
+                        return processedEntries;
+                    });
+                    if (Array.isArray(deepEntries)) {
+                        console.warn('entries after deepify', deepEntries.length, deepEntries);
+                        processedEntries = deepEntries.length === 1 && deepEntries[0]?.entries ? deepEntries[0].entries : deepEntries;
+                    }
+                } catch (err) {
+                    console.error('Deepify processing error in renderGroupEntries:', err);
                 }
-            } catch (err) {
-                console.error('Deepify processing error in renderGroupEntries:', err);
+            }
+
+            // Append sub-group entries AFTER deepify (avoid path conflicts from deepify restructuring)
+            if (subGroups.length > 0) {
+                const subEntries = subGroups.map(sg => {
+                    const sgName = sg.group.slice(groupPrefix.length)
+                    return {
+                        name: sgName,
+                        details: '',
+                        type: 'group',
+                        safe: true,
+                        icon: isSeries ? sg.icon : undefined,
+                        renderer: async () => {
+                            return this.renderGroupEntries(sg, acpolicy, isSeries)
+                        }
+                    }
+                })
+                subEntries.sortByProp('name')
+                processedEntries.push(...subEntries)
             }
 
             return processedEntries;

@@ -711,6 +711,10 @@ class Manager extends ManagerFetch {
                 }
             }
             let lists = this.get();
+            // Double-check for duplicates after async fetch (race condition guard)
+            if (lists.some(l => l[1] == url)) {
+                return true;
+            }
             lists.push([name, url]);
             config.set(this.key, lists);
             return true;
@@ -882,6 +886,7 @@ class Manager extends ManagerFetch {
     setMeta(url, key, val) {
         let lists = clone(this.get()); // clone it
         for (let i in lists) {
+            if (!Array.isArray(lists[i])) continue;
             if (lists[i][1] == url) {
                 if (key == 'name') {
                     lists[i][0] = val;
@@ -1423,7 +1428,10 @@ class Manager extends ManagerFetch {
             type: 'vod', p: 1,
             JsHttpRequest: '1-xml'
         });
-        const cmd = data.data[0].cmd;
+        const cmd = data?.data?.[0]?.cmd;
+        if (!cmd) {
+            throw new Error('Invalid MAG response: missing cmd in data.data');
+        }
         const ret = await mag.execute({ action: 'create_link', type: 'vod', cmd, JsHttpRequest: '1-xml' });
         const res = ret.cmd.split('/');
         if (res.length >= 6) {
@@ -1619,9 +1627,8 @@ class Manager extends ManagerFetch {
         const info = await this.master.info(true), key = 'epg-' + lang.locale;
         if (info[data.url] && info[data.url].epg) {
             const urls = new Set(parseCommaDelimitedURIs(info[data.url].epg))
-            let data = this.EPGs()
-            data = data.filter(e => !urls.has(e.url))
-            config.set(key, data)
+            const epgList = this.EPGs()
+            config.set(key, epgList.filter(e => !urls.has(e.url)))
         }
         menu.suspendRendering();
         try { // Ensure that we'll resume rendering

@@ -315,6 +315,7 @@ class MenuBBCode extends MenuScrolling {
         return this.makeFunnyText(name)
     }
     makeFunnyText(text) {
+        if (typeof text !== 'string') return ''
         if (text.includes('&') && text.includes(';')) {
             const wrap = document.createElement('span')
             wrap.innerHTML = text
@@ -904,7 +905,7 @@ export class Menu extends MenuNav {
         }
         if (e.type == 'check') e.fa = 'fas fa-toggle-'+ (e.value ? 'on' : 'off')
         if (typeof(e.statusFlags) != 'string') e.statusFlags = ''
-        if (e.rawname && e.rawname.includes('[')) e.rawname = this.parseBBCode(e.rawname)
+        if (typeof e.rawname === 'string' && e.rawname.includes('[')) e.rawname = this.parseBBCode(e.rawname)
         e.wrapperClass = 'entry-wrapper'
         if (!e.side && this.icons[e.path] && this.icons[e.path].cover && (main.config['stretch-logos'] || (e.class && e.class.includes('entry-force-cover')))) {
             e.cover = true

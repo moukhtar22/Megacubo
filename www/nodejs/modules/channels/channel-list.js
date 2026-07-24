@@ -285,6 +285,11 @@ export class ChannelsList extends EventEmitter {
     }
     computeMods(base, current) {
         const mods = { additions: {}, removals: {}, renames: {}, termChanges: {} }
+        // Validate inputs to prevent crashes on non-object values
+        if (!base || typeof base !== 'object' || !current || typeof current !== 'object') {
+            console.warn('computeMods: invalid base or current', typeof base, typeof current);
+            return mods;
+        }
         // For each category in base and current
         const allCats = new Set([...Object.keys(base), ...Object.keys(current)])
         for (const cat of allCats) {
@@ -370,12 +375,17 @@ export class ChannelsList extends EventEmitter {
         return result
     }    
     async save() {
-        if (!this.baseCache) {
-            // Fallback: fetch base if not cached
+        if (!this.baseCache || typeof this.baseCache !== 'object') {
+            // Fallback: fetch base if not cached or invalid
             this.baseCache = await this.get().catch(err => {
                 console.error('Failed to fetch base for save:', err)
                 return {}
             })
+        }
+        // Ensure categories is a valid object before computing mods
+        if (!this.categories || typeof this.categories !== 'object') {
+            console.warn('save: invalid categories, resetting');
+            this.categories = {};
         }
         const mods = this.computeMods(this.baseCache, this.categories)
         this.userMods = mods

@@ -651,7 +651,7 @@ class Theme extends EventEmitter {
         if (err) {
             osd.hide('theme')
             await Download.cache.invalidate(url)
-            await fs.promises.unlink(file)
+            await fs.promises.unlink(file).catch(() => {})
             menu.displayErr(err)
         } else {
             await this.load(rfile).catch(err => {

@@ -667,7 +667,8 @@ class Menu extends EventEmitter {
                             entriesSource[i].selected = j == i    
                         })
                     }
-                    this.emit('action', entriesSource[i])
+                    const entry = entriesSource[i]
+                    this.emit('action', entry)
                     return true
                 } else {
                     console.error('ACTION ' + name + ' (' + tabindex + ') NOT FOUND IN ', { dir, destPath, keys: Object.keys(this.pages) }, entriesSource)

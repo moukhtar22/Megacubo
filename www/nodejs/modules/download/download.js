@@ -456,7 +456,7 @@ class Download extends EventEmitter {
                         this.endWithError(`Max retries exceeded: ${error.message}`, 500);
                     }
                 } else {
-                    this.endWithError(`Download failed: ${error.message}`, 500);
+                    this.endWithError(`Download failed: ${error.message || error.code || 'Unknown error'}`, 500);
                 }
             }
         }

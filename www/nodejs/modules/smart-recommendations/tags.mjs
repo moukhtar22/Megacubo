@@ -4,6 +4,8 @@ import { terms } from '../lists/tools.js'
 import { inWorker } from '../paths/paths.js'
 import storage from '../storage/storage.js'
 import config from '../config/config.js'
+import lang from '../lang/lang.js'
+import { getDefaultTags } from './default-tags.mjs'
 // Remove direct import to avoid circular dependency
 // import smartRecommendations from './index.mjs'
 
@@ -12,7 +14,7 @@ export class Tags extends EventEmitter{
         super()
         this.smartRecommendations = smartRecommendations
         this.caching = {programmes: {}, trending: {}}
-        this.defaultTagsCount = 128
+        this.defaultTagsCount = 512
         this.queue = new PQueue({concurrency: 1})
         this.manualTagsKey = 'interests'
         this.manualTags = {}
@@ -174,6 +176,7 @@ export class Tags extends EventEmitter{
         })
     }
     async reset() {
+        this._channelTermsCache = null // Clear cache when channels reload
         // Clear pending expansions to allow fresh expansions after reset
         this.pendingExpansions.clear()
         if(this.queue.size) {
@@ -186,6 +189,34 @@ export class Tags extends EventEmitter{
         })
     }
     // Helper method to check if a tag is valid
+    // Set of quality/resolution terms that aren't meaningful as content interests
+    static QUALITY_TERMS = new Set([
+        'sd', 'hd', 'fhd', 'uhd', '4k', '8k',
+        '360p', '480p', '576p', '720p', '1080p', '1440p', '2160p', '4320p',
+        'hdr', 'sdr', 'dolby', 'atmos', 'h264', 'h265', 'hevc', 'av1', 'vp9',
+        'x264', 'x265', 'bitrate', 'fps', '60fps', '30fps'
+    ])
+
+    // Lazy cache for channel terms set (built from channelsIndex)
+    _getChannelTerms() {
+        if (!this._channelTermsCache) {
+            this._channelTermsCache = new Set()
+            const ci = global.channels?.channelList?.channelsIndex
+            if (ci) {
+                for (const terms of Object.values(ci)) {
+                    if (Array.isArray(terms)) {
+                        for (const term of terms) {
+                            if (term && term.length > 1) {
+                                this._channelTermsCache.add(term)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return this._channelTermsCache
+    }
+
     isValidTag(tag) {
         // Skip URLs
         if (tag.includes('://') || tag.includes('www.') || tag.includes(' ')) {
@@ -204,6 +235,16 @@ export class Tags extends EventEmitter{
         
         // Skip terms that look like file extensions or technical terms
         if (tag.match(/\.(com|org|net)$/i)) {
+            return false
+        }
+        
+        // Skip quality/resolution terms (not meaningful as content interests)
+        if (Tags.QUALITY_TERMS.has(tag)) {
+            return false
+        }
+        
+        // Skip channel terms — TV channel names aren't content interests
+        if (this._getChannelTerms().has(tag)) {
             return false
         }
         
@@ -327,7 +368,7 @@ export class Tags extends EventEmitter{
             data0[k] = (data0[k] || 0) + data[k]
         }
 
-        this.caching.programmes = await this.expand(data0);
+        this.caching.programmes = { ...data0 };
         emit && this.emit('updated');
     }
     async trendingUpdated(emit) {
@@ -373,18 +414,62 @@ export class Tags extends EventEmitter{
             });
         };
 
-        if (Array.isArray(global.channels?.trending?.currentRawEntries)) {
-            global.channels.trending.currentRawEntries.forEach(e => {
-                if (!e) return
+        if (Array.isArray(global.channels?.trending?.currentEntries)) {
+            const channelEntries = [] // entries identified as channels (for EPG lookup)
+            const nonChannelEntries = [] // entries that ARE the content itself
+            
+            // First pass: separate channels from non-channels, add terms proportionally to audience
+            global.channels.trending.currentEntries.forEach(e => {
+                if (!e || !e.name) return
                 try {
-                    const entryTerms = global.channels.entryTerms?.(e)
-                    if (Array.isArray(entryTerms)) {
-                        addToMap(entryTerms, e.users || 1)
+                    const users = e.users || 1
+                    const ch = global.channels.isChannel(e)
+                    if (ch) {
+                        // It's a channel - add channel name terms, will try EPG for programme
+                        channelEntries.push({ name: ch.name, users, terms: terms(ch.name) })
+                        const entryTerms = global.channels.entryTerms?.(e)
+                        if (Array.isArray(entryTerms)) {
+                            addToMap(entryTerms, users * 0.3) // Channel terms with reduced weight
+                        }
+                    } else {
+                        // It's content (stream/title) - use its own name as tag
+                        nonChannelEntries.push(e)
+                        const nameTerms = terms(e.name)
+                        if (Array.isArray(nameTerms)) {
+                            addToMap(nameTerms, users * 0.5) // Content terms have higher weight
+                        }
                     }
                 } catch (err) {
-                    // Ignore errors in entryTerms extraction
+                    // Ignore errors
                 }
             })
+            
+            // Second pass: batch-fetch EPG programmes for all channel entries
+            if (global.lists?.epg?.loaded && typeof global.lists.getLiveNowAndNext === 'function' && channelEntries.length > 0) {
+                try {
+                    const descriptors = channelEntries.map(c => ({ name: c.name, terms: c.terms }))
+                    const epgResults = await global.lists.getLiveNowAndNext(descriptors, { limit: 1 })
+                    
+                    if (epgResults && typeof epgResults === 'object') {
+                        for (let i = 0; i < channelEntries.length; i++) {
+                            const channelName = channelEntries[i].name
+                            const users = channelEntries[i].users
+                            const data = epgResults[channelName]
+                            if (data && Array.isArray(data.programmes) && data.programmes.length > 0) {
+                                const programme = data.programmes[0]
+                                if (programme && programme.title) {
+                                    const programmeTerms = terms(programme.title)
+                                    if (Array.isArray(programmeTerms)) {
+                                        addToMap(programmeTerms, users * 0.5) // Programme weight proportional to audience
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } catch (err) {
+                    console.warn('Failed to batch-fetch EPG programmes for trending:', err.message)
+                }
+            }
         }
 
         if (Array.isArray(this.searchSuggestionEntries)) {
@@ -395,7 +480,7 @@ export class Tags extends EventEmitter{
             })
         }
 
-        this.caching.trending = await this.expand(this.equalize(map));
+        this.caching.trending = { ...this.equalize(map) };
         emit && this.emit('updated');
     }
     equalize(tags, factor=1) {
@@ -421,42 +506,6 @@ export class Tags extends EventEmitter{
                 .map(([key, value]) => [key, (value / maxValue) * factor])
         )
     }
-    async expand(oTags, options = {}) {
-        let additionalTags = {}, tags = Object.assign({}, oTags);
-        const limit = options.amount || this.defaultTagsCount
-        const additionalLimit = limit - Object.keys(tags).length
-
-        if (additionalLimit > 0) {
-            // Try to get expanded tags from cache first
-            const cacheKey = this.generateCacheKey(tags, options)
-            const cachedExpansion = this.getExpandedTagsFromCache(cacheKey)
-            
-            if (cachedExpansion) {
-                if (!this.hasMeaningfulExpansion(tags, cachedExpansion)) {
-                    this.expandedTagsCache.delete(cacheKey)
-                    this.saveCache().catch(err => console.warn('Failed to persist cache cleanup:', err?.message || err))
-                } else {
-                    // Use cached expanded tags immediately
-                    Object.keys(cachedExpansion).forEach(category => {
-                        const lowerCategory = category.toLowerCase()
-                        if (!tags[lowerCategory]) {
-                            additionalTags[lowerCategory] = cachedExpansion[category] / 2
-                        }
-                    })
-                    additionalTags = this.prepare(additionalTags, additionalLimit)
-                    Object.assign(tags, additionalTags)
-                    
-                    // Schedule background refresh for cache update
-                    this.scheduleBackgroundExpansion(tags, options)
-                    return tags
-                }
-            }
-            
-            // No cache available - return original tags immediately and schedule expansion in background
-            this.scheduleBackgroundExpansion(tags, options)
-        }
-        return tags
-    }
     async get(limit, ignoreExternalTrends = false) {
         if (typeof limit !== 'number') {
             limit = this.defaultTagsCount
@@ -465,18 +514,23 @@ export class Tags extends EventEmitter{
         let manualTags = {}
         const initialTags = this.equalize(this.manualTags || {}, 1)
         if (Object.keys(initialTags).length) {
-            let expandedTags = await this.expand(initialTags, { amount: limit }).catch(err => console.warn('Failed to expand manual tags:', err?.message || err))
-            if (expandedTags && typeof expandedTags === 'object' && !Array.isArray(expandedTags)) {
-                expandedTags = this.equalize(expandedTags, 0.75)
-                for (const [key, value] of Object.entries(expandedTags)) {
-                    manualTags[key] = Math.max(manualTags[key] || 0, value)
-                }
+            for (const [key, value] of Object.entries(initialTags)) {
+                manualTags[key] = Math.max(manualTags[key] || 0, value)
             }
         }
         for (const [key, value] of Object.entries(initialTags)) {
             manualTags[key] = Math.max(manualTags[key] || 0, value)
         }
         manualTags = this.equalize(manualTags, 1)
+
+        // Inject default tags with low score to ensure diversity even with few/zero tags
+        // Defaults fill gaps without overwriting existing tags
+        const defaultTags = getDefaultTags(lang?.locale, limit)
+        for (const [tag, score] of Object.entries(defaultTags)) {
+            if (!(tag in manualTags)) {
+                manualTags[tag] = score * 0.05 // Low base score — real interests will dominate
+            }
+        }
 
         const shouldIncludeAdditionalSources = !ignoreExternalTrends && Object.keys(manualTags).length < limit
 

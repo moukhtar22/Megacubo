@@ -558,7 +558,12 @@ class ParentalControl extends EventEmitter {
                 let allow = await this.auth();
                 if (allow === true) {
                     // Authentication successful - unlock and play content
-                    menu.emit('action', e);
+                    if (typeof e.action === 'function') {
+                        const ret = e.action(e)
+                        if (ret && typeof ret.catch === 'function') ret.catch(err => console.error(err))
+                    } else {
+                        menu.emit('action', e)
+                    }
                 }
             } catch (err) {
                 // Authentication failed or cancelled - content remains blocked

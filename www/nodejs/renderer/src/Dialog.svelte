@@ -38,7 +38,7 @@
             document.body.classList.add("dialog");
             if (!main.menu) return;
             const defaultIndex = content.defaultIndex || content.opts[0].id;
-            if(defaultIndex && (element=document.getElementById(`dialog-template-option-${defaultIndex}`))) {
+            if(defaultIndex && (element=document.getElementById(`dialog-template-option-${text2id(String(defaultIndex))}`))) {
                 const key = main.menu.getKey(element);
                 main.menu.lastSelectedKey = key;
                 main.menu.emit("focus", element);
@@ -368,9 +368,13 @@
 
     $effect(() => {
         if (visible && container) {
-            const defaultElement = container?.querySelector(
-                `#dialog-template-option-${content.defaultIndex}`
-            );
+            let defaultElement = null;
+            try {
+                const selector = `#dialog-template-option-${text2id(String(content.defaultIndex))}`;
+                defaultElement = container?.querySelector(selector);
+            } catch (e) {
+                console.warn('Dialog: invalid selector for defaultIndex', content.defaultIndex, e);
+            }
             if (defaultElement) {
                 defaultElement.focus();
             }
