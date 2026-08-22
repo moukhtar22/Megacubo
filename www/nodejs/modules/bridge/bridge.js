@@ -2,7 +2,7 @@ import { EventEmitter } from 'node:events'
 import http from 'http'
 import path from 'path'
 import fs from 'fs'
-import { isUnderRootAsync, prepareCORS, traceback } from '../utils/utils.js'
+import { prepareCORS, traceback } from '../utils/utils.js'
 import url from 'node:url'
 import formidable from 'formidable'
 import closed from '../on-closed/on-closed.js'
@@ -135,7 +135,8 @@ class BridgeServer extends EventEmitter {
                     pathname = path.join(paths.cwd, pathname)
                 }
                 pathname = path.normalize(pathname)
-                if (!pathname || (!mapped && !await isUnderRootAsync(pathname, paths.cwd))) {
+                const root = path.resolve(paths.cwd)
+                if (!pathname || (!mapped && (pathname === root || !pathname.startsWith(root + path.sep)))) {
                     response.statusCode = 403;
                     response.end();
                     return;

@@ -29,10 +29,7 @@ console.log(`Starting Playwright with base URL http://127.0.0.1:${port}`);
 const userArgs = process.argv.slice(2);
 const hasReporter = userArgs.some((arg) => arg.startsWith('--reporter'));
 const args = ['test', ...(hasReporter ? userArgs : ['--reporter=list', ...userArgs])];
-const playwrightBinary = process.platform === 'win32'
-  ? path.join(__dirname, '..', 'node_modules', '.bin', 'playwright.cmd')
-  : path.join(__dirname, '..', 'node_modules', '.bin', 'playwright');
-const command = `${playwrightBinary} ${args.map((arg) => JSON.stringify(arg)).join(' ')}`;
+const playwrightCli = path.join(__dirname, '..', 'node_modules', 'playwright', 'cli.js');
 const spawnOptions = {
   stdio: 'inherit',
   cwd: path.join(__dirname, '..'),
@@ -42,9 +39,8 @@ const spawnOptions = {
   },
 };
 
-const child = process.platform === 'win32'
-  ? spawn('cmd.exe', ['/c', playwrightBinary, ...args], spawnOptions)
-  : spawn(playwrightBinary, args, spawnOptions);
+// Run Playwright directly with Node (no shell) to avoid command injection via cmd.exe
+const child = spawn(process.execPath, [playwrightCli, ...args], spawnOptions);
 
 child.on('exit', (code, signal) => {
   if (signal) process.kill(process.pid, signal);

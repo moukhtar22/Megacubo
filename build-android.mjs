@@ -9,9 +9,10 @@ console.log('This script will build the Megacubo APKs for ARM and ARM64 architec
 // Get __dirname in ESM
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// Set JAVA_HOME if not already set (use Android Studio's JBR)
+// Set JAVA_HOME if not already set
 if (!process.env.JAVA_HOME) {
   const possibleJavaPaths = [
+    path.join(__dirname, 'temp', 'jdk21', 'jdk-21.0.6+7'),
     'C:\\Program Files\\Android\\Android Studio\\jbr',
     'C:\\Program Files\\Android\\Android Studio\\jre',
     process.env.LOCALAPPDATA ? path.join(process.env.LOCALAPPDATA, 'Android', 'android-studio', 'jbr') : '',
@@ -167,9 +168,8 @@ const updateBuildGradleWithABI = (abi) => {
 // Execute shell command with error handling
 const executeCommand = (command) => {
   try {
-    // Pass current environment including JAVA_HOME
-    const env = process.env;
-    execSync(command, { stdio: "inherit", env });
+    // execSync inherits process.env by default (includes JAVA_HOME)
+    execSync(command, { stdio: "inherit" });
   } catch (error) {
     console.error(`Command failed: ${command}`);
     process.exit(error.status);
@@ -257,6 +257,7 @@ const buildApplication = async () => {
   
   // ARM64 build process
   updateBuildGradleWithABI(["arm64-v8a", "armeabi-v7a"]);
+  
   if (fs.existsSync(path.join(DISTRIBUTION_DIRECTORY, "premium.js"))) {
     fs.unlinkSync(path.join(DISTRIBUTION_DIRECTORY, "premium.js"));
   }

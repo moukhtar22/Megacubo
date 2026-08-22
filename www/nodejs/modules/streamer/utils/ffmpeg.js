@@ -11,7 +11,7 @@ import ffmpeg from "../../ffmpeg/ffmpeg.js";
 import Downloader from "./downloader.js";
 import config from "../../config/config.js"
 import paths from '../../paths/paths.js'
-import { ext, forwardSlashes, isUnderRootAsync, prepareCORS, rmdir } from '../../utils/utils.js'
+import { ext, forwardSlashes, prepareCORS, rmdir } from '../../utils/utils.js'
 
 class StreamerFFmpeg extends EventEmitter {
     constructor(source, opts) {
@@ -89,8 +89,9 @@ class StreamerFFmpeg extends EventEmitter {
         if (!filePath) {
             throw new Error('no file specified');
         }
-        const file = path.resolve(this.opts.workDir, this.uid, filePath);
-        if (!await isUnderRootAsync(file, this.opts.workDir)) {
+        const file = path.resolve(this.opts.workDir, String(this.uid), filePath);
+        const root = path.resolve(this.opts.workDir);
+        if (file !== root && !file.startsWith(root + path.sep)) {
             throw new Error('File is not under root');
         }
         return new Promise((resolve, reject) => {
@@ -221,7 +222,9 @@ class StreamerFFmpeg extends EventEmitter {
         return url;
     }
     async prepareFile(file) {
-        if (!await isUnderRootAsync(file, this.opts.workDir)) {
+        file = path.resolve(file);
+        const root = path.resolve(this.opts.workDir);
+        if (file !== root && !file.startsWith(root + path.sep)) {
             throw new Error('File is not under root');
         }
         const stat = await fs.promises.stat(file).catch(() => {})

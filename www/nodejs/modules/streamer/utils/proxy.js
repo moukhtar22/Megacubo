@@ -583,7 +583,7 @@ class StreamerProxy extends StreamerProxyBase {
                     }
                 }
                 if (this.opts.debug) {
-                    console.log('M3U8 ' + data, url);
+                    console.log('M3U8', data, url);
                 }
             } else {
                 console.error('Invalid response from server', url, data);

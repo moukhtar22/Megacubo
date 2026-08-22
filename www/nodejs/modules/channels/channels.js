@@ -502,6 +502,9 @@ class ChannelsEditing extends ChannelsEPG {
                             const name = o.originalName || o.name;
                             console.warn('RENAME', name, 'TO', val, category);
                             if (val && val != name) {
+                                if (category === '__proto__' || category === 'constructor' || category === 'prototype') {
+                                    return;
+                                }
                                 let i = -1;
                                 this.channelList.categories[category].some((n, j) => {
                                     if (n.substr(0, name.length) == name) {
@@ -833,7 +836,7 @@ class Channels extends ChannelsKids {
 
             // Ensure all required fields are properly formatted
             return {
-                arguments: '"' + String(entry.url).replace(/"/g, '\\"') + '"',
+                arguments: JSON.stringify(String(entry.url)),
                 title: String(entry.name).substring(0, 100), // Limit title length
                 description: String(entry.name).substring(0, 100), // Limit description length
                 program: String(process.execPath),

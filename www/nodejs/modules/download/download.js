@@ -112,7 +112,10 @@ class Download extends EventEmitter {
         this.authCredentials = null;
         if (this.opts.authURL) {
             try {
-                const authUrl = new URL(this.opts.authURL.replace(/#.*$/, '')); // Remove hash part
+                // Remove hash part without regex to avoid potential ReDoS on long inputs
+                const hashIndex = this.opts.authURL.indexOf('#');
+                const cleanAuthURL = hashIndex === -1 ? this.opts.authURL : this.opts.authURL.slice(0, hashIndex);
+                const authUrl = new URL(cleanAuthURL);
                 if (authUrl.username && authUrl.password) {
                     this.authCredentials = {
                         username: authUrl.username,
@@ -768,7 +771,19 @@ class Download extends EventEmitter {
 
                     if (statusCode >= 200 && statusCode < 400) {
                         stream = fs.createWriteStream(opts.file);
-                        dl.on('data', chunk => !stream.destroyed && stream.write(chunk));
+                        // Always attach an error handler right away: a write on a destroyed
+                        // stream emits ERR_STREAM_DESTROYED, which otherwise becomes an
+                        // uncaughtException and kills the app.
+                        stream.on('error', err => {
+                            console.error('Download.file stream error:', err?.message || err)
+                            dl.destroy();
+                            fs.unlink(opts.file, () => reject(err));
+                        });
+                        dl.on('data', chunk => {
+                            if (stream && !stream.destroyed) {
+                                stream.write(chunk);
+                            }
+                        });
                     } else {
                         dl.destroy();
                         throw new Error(`HTTP error ${statusCode}`);

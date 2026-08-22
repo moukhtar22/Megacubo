@@ -146,6 +146,12 @@ class Downloads extends EventEmitter {
                 } else {
                     try {
                         pathname = fs.realpathSync(path.resolve(paths.cwd, pathname))
+                        const root = fs.realpathSync(path.resolve(paths.cwd))
+                        if (pathname !== root && !pathname.startsWith(root + path.sep)) {
+                            res.statusCode = 403;
+                            res.end();
+                            return;
+                        }
                     } catch (err) {
                         res.statusCode = 403;
                         res.end();
@@ -328,12 +334,22 @@ class Downloads extends EventEmitter {
             renderer.ui.emit('background-mode-lock', 'saving-file-' + uid);
             osd.show(lang.SAVING_FILE_X.format(name), 'fa-mega busy-x', uid, 'persistent');
             const file = target + '/' + name;
-            const writer = fs.createWriteStream(file, { flags: 'w', highWaterMark: Number.MAX_SAFE_INTEGER }), download = new Download({
+            const writer = fs.createWriteStream(file, { flags: 'w', highWaterMark: Number.MAX_SAFE_INTEGER });
+            const download = new Download({
                 url,
                 keepalive: false,
                 retries: 999,
                 headers: {},
                 followRedirect: true
+            });
+            // Attach an error handler immediately: writing on a destroyed stream emits
+            // ERR_STREAM_DESTROYED, which otherwise surfaces as an uncaughtException.
+            writer.on('error', err => {
+                console.error('Background download writer error:', err?.message || err)
+                writer.destroy()
+                download.destroy()
+                delete this.activeDownloads[url]
+                renderer.ui.emit('background-mode-unlock', 'saving-file-' + uid)
             });
             download.uid = uid;
             download.file = file;

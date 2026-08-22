@@ -266,14 +266,18 @@ export const forwardSlashes = path => {
     return path;
 }
 export const isUnderRootAsync = async (relPath, root) => {
+    const resolvedPath = path.resolve(root, relPath);
+    const rootPath = path.resolve(root);
+    // Inline containment check before any fs operation (recognized by static analysis)
+    if (resolvedPath !== rootPath && !resolvedPath.startsWith(rootPath + path.sep)) {
+        return false;
+    }
     try {
-        const resolvedPath = path.resolve(root, relPath);
         const normalizedPath = await fs.promises.realpath(resolvedPath);
-        return forwardSlashes(normalizedPath).startsWith(forwardSlashes(root));
+        return forwardSlashes(normalizedPath).startsWith(forwardSlashes(rootPath));
     } catch (error) {
-        // If realpath fails (e.g., file doesn't exist), just check if the resolved path starts with root
-        const resolvedPath = path.resolve(root, relPath);
-        return forwardSlashes(resolvedPath).startsWith(forwardSlashes(root));
+        // realpath fails (e.g., file doesn't exist); containment already confirmed above
+        return true;
     }
 }
 export const getDomain = (u, includePort) => {

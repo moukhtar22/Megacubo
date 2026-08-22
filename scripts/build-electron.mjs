@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { createWriteStream, readFileSync, writeFileSync, copyFileSync, mkdirSync, rmSync, existsSync } from 'fs';
+import { createWriteStream, readFileSync, writeFileSync, copyFileSync, mkdirSync, rmSync, existsSync, cpSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { execSync } from 'child_process';
@@ -236,7 +236,7 @@ try {
 
 // Create app folder and copy files
 mkdirSync(appDir, { recursive: true });
-execSync(`cp -r "${join(rootDir, 'temp', 'clean-app')}"/* "${appDir}/"`, { stdio: 'inherit' });
+cpSync(join(rootDir, 'temp', 'clean-app'), appDir, { recursive: true });
 
 // 7. FFmpeg binaries already prepared at startup
 

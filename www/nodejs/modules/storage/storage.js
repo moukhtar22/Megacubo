@@ -1091,6 +1091,8 @@ class StorageIndex extends StorageHolding {
         return changed
     }
     async touch(key, atts, doNotPropagate) {
+        // Protect against prototype pollution via dangerous key names
+        if (key === '__proto__' || key === 'constructor' || key === 'prototype') return
         // Apply prepareKey only if key doesn't already have valid scope prefix (global/ or profiles/)
         if (!this.hasValidScope(key)) {
             key = this.prepareKey(key);
@@ -2467,7 +2469,7 @@ class Storage extends StorageIO {
                 }
             }
         } catch (err) {
-            console.error(`Error cleaning up lock for key ${key}:`, err);
+            console.error('Error cleaning up lock for key:', key, err);
         }
     }
     

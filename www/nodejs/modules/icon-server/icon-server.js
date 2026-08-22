@@ -449,14 +449,17 @@ class IconServerStore extends IconSearch {
                     'Upgrade-Insecure-Requests': '1'
                 };
                 
-                // Add referer for specific domains that need it
-                if (domain.includes('github.com') || domain.includes('raw.githubusercontent.com')) {
+                // Add referer for specific domains that need it (exact/suffix hostname match only)
+                if (domain === 'github.com' || domain.endsWith('.github.com') ||
+                    domain === 'raw.githubusercontent.com' || domain.endsWith('.raw.githubusercontent.com')) {
                     headers['Referer'] = 'https://github.com/';
-                } else if (domain.includes('imgur.com') || domain.includes('i.imgur.com')) {
+                } else if (domain === 'imgur.com' || domain.endsWith('.imgur.com') ||
+                    domain === 'i.imgur.com' || domain.endsWith('.i.imgur.com')) {
                     headers['Referer'] = 'https://imgur.com/';
-                } else if (domain.includes('wikipedia.org') || domain.includes('wikimedia.org')) {
+                } else if (domain === 'wikipedia.org' || domain.endsWith('.wikipedia.org') ||
+                    domain === 'wikimedia.org' || domain.endsWith('.wikimedia.org')) {
                     headers['Referer'] = 'https://www.wikipedia.org/';
-                } else if (domain.includes('epg.best')) {
+                } else if (domain === 'epg.best' || domain.endsWith('.epg.best')) {
                     headers['Referer'] = 'https://epg.best/';
                 } else {
                     headers['Referer'] = urlObj.origin + '/';

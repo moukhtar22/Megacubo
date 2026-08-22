@@ -1,5 +1,7 @@
 import stream from "stream";
 import fs from "fs";
+import path from "path";
+import paths from "../paths/paths.js";
 
 // wrapper around fs.createReadStream to prevent fatal errors when file is deleted before opening
 const { Readable } = stream;
@@ -7,6 +9,16 @@ class Reader extends Readable {
     constructor(file, opts = {}) {
         super(opts);
         this.file = file;
+        if (this.file) {
+            const resolvedFile = path.resolve(this.file);
+            const rootTemp = path.resolve(paths.temp);
+            const rootData = path.resolve(paths.data);
+            if (resolvedFile !== rootTemp && !resolvedFile.startsWith(rootTemp + path.sep) &&
+                resolvedFile !== rootData && !resolvedFile.startsWith(rootData + path.sep)) {
+                throw new Error('Reader: file outside allowed roots');
+            }
+            this.file = resolvedFile;
+        }
         this.opts = opts;
         this.fd = null;
         this.bytesRead = 0;

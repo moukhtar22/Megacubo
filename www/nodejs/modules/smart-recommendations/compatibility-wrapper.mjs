@@ -8,7 +8,6 @@ import { Tags } from './tags.mjs'
 import { ready } from '../bridge/bridge.js'
 import PQueue from 'p-queue'
 import { terms, match } from '../lists/tools.js'
-import { AIClient } from './ai-client/AIClient.mjs'
 import Limiter from '../limiter/limiter.js'
 import StreamClassifier from "../lists/stream-classifier.js";
 import mega from "../mega/mega.js";
@@ -22,7 +21,6 @@ class SmartRecommendationsCompatibility extends EventEmitter {
         super()
         this.readyState = 0
         this.smartRecommendations = null
-        this.aiClient = null
         this.initialized = false
         this.updateIntervalSecs = 300
         this.epgLoaded = false
@@ -102,11 +100,8 @@ class SmartRecommendationsCompatibility extends EventEmitter {
         try {
             ErrorHandler.info('🚀 Initializing Smart Recommendations Compatibility Wrapper...')
 
-            // Initialize AI Client for smart recommendations
-            await this.initializeAIClient()
-
-            // Initialize smart recommendations with AI Client
-            await smartRecommendations.initialize(this.aiClient, {
+            // Initialize smart recommendations
+            await smartRecommendations.initialize({
                 semanticWeight: 0.6,
                 traditionalWeight: 0.4,
                 maxRecommendations: 50,
@@ -156,33 +151,6 @@ class SmartRecommendationsCompatibility extends EventEmitter {
             ErrorHandler.error('❌ Failed to initialize Smart Recommendations:', error)
             this.readyState = -1
             return false
-        }
-    }
-
-    /**
-     * Initialize AI Client for smart recommendations
-     */
-    async initializeAIClient() {
-        try {
-            ErrorHandler.info('🤖 Initializing AI Client for Smart Recommendations...')
-
-            this.aiClient = new AIClient({
-                serverUrl: 'https://ai.megacubo.tv',
-                enabled: true,
-                timeout: 10000,
-                retries: 2,
-                maxMemoryItems: 500,
-                maxMemorySize: 10 * 1024 * 1024, // 10MB
-                batchSize: 50,
-                batchDelay: 100
-            })
-
-            // Initialize client (test connection)
-            await this.aiClient.initialize()
-
-        } catch (error) {
-            ErrorHandler.error('❌ Failed to initialize AI Client:', error)
-            // Non-fatal: AI Client will use fallback mode
         }
     }
 
@@ -1494,9 +1462,19 @@ class SmartRecommendationsCompatibility extends EventEmitter {
         const name1 = channel1.name.toLowerCase()
         const name2 = channel2.name.toLowerCase()
 
-        // Extract base name (remove numbers and common suffixes)
-        const baseName1 = name1.replace(/\s+\d+$/, '').replace(/\s+(tv|channel|brasil)$/, '')
-        const baseName2 = name2.replace(/\s+\d+$/, '').replace(/\s+(tv|channel|brasil)$/, '')
+        // Extract base name (remove numbers and common suffixes) without ReDoS-prone regex
+        const stripSuffix = (n) => {
+            let out = n.replace(/\d+$/, '').replace(/\s+$/, '')
+            const parts = out.split(/\s+/)
+            const last = parts[parts.length - 1]
+            if (parts.length > 1 && last && ['tv', 'channel', 'brasil'].includes(last)) {
+                parts.pop()
+                out = parts.join(' ')
+            }
+            return out
+        }
+        const baseName1 = stripSuffix(name1)
+        const baseName2 = stripSuffix(name2)
 
         // If base names are similar, boost similarity
         if (baseName1 === baseName2 && baseName1.length > 3) {
@@ -2377,103 +2355,6 @@ class SmartRecommendationsCompatibility extends EventEmitter {
     ts2clock(timestamp) {
         const date = new Date(timestamp * 1000)
         return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    }
-
-    /**
-     * Expand tags using AI Client (delegates to internal smartRecommendations)
-     * @param {Object} tags - Tags to expand
-     * @param {Object} options - Options {as: 'objects'|'default', amount: number}
-     * @returns {Promise<Array|Object>} Related tags
-     */
-    async expandTags(tags, options = {}) {
-        if (!this.initialized || !this.aiClient) {
-            return options.as === 'objects' ? [] : {}
-        }
-
-        try {
-            const response = await this.aiClient.expandTags(tags, {
-                limit: options.amount || 20,
-                threshold: options.threshold || 0.6,
-                locale: lang.locale || 'pt'
-            })
-
-            const expandedTags = response.expandedTags || {}
-
-            // Format based on requested output type
-            if (options.as === 'objects') {
-                return Object.entries(expandedTags).map(([category, score]) => ({
-                    category: category.toLowerCase(),
-                    score
-                }))
-            }
-
-            // Return as object
-            return expandedTags
-
-        } catch (error) {
-            ErrorHandler.warn('expandTags failed:', error.message)
-            return options.as === 'objects' ? [] : {}
-        }
-    }
-
-    /**
-     * Reduce/cluster tags using AI semantic similarity
-     * Groups similar tags together and returns a reduced set
-     * @param {Array} tags - Array of tag names to cluster
-     * @param {Object} options - Options {amount: number}
-     * @returns {Promise<Object>} Clustered tags object where keys are cluster representatives and values are arrays of similar tags
-     */
-    async reduceTags(tags, options = {}) {
-        const { amount = 20 } = options
-
-        if (!this.initialized || !this.aiClient || !Array.isArray(tags) || tags.length === 0) {
-            ErrorHandler.warn('Cannot reduce tags: system not initialized or invalid input')
-            return {}
-        }
-
-        // If we already have fewer tags than requested, return them as-is
-        if (tags.length <= amount) {
-            const result = {}
-            tags.forEach(tag => {
-                result[tag] = [tag]
-            })
-            return result
-        }
-
-        try {
-            ErrorHandler.info(`🔄 Reducing ${tags.length} tags to ~${amount} clusters...`)
-
-            // Use AI Client to cluster tags
-            const response = await this.aiClient.clusterTags(tags, {
-                clusters: amount,
-                locale: lang.locale || 'pt'
-            })
-
-            const clusters = response.clusters || {}
-
-            // If AI clustering failed, use fallback
-            if (Object.keys(clusters).length === 0) {
-                ErrorHandler.warn('AI clustering returned empty, using fallback')
-                const fallback = {}
-                tags.slice(0, amount).forEach(tag => {
-                    fallback[tag] = [tag]
-                })
-                return fallback
-            }
-
-            ErrorHandler.info(`✅ Reduced tags: ${tags.length} tags → ${Object.keys(clusters).length} clusters`)
-
-            return clusters
-
-        } catch (error) {
-            ErrorHandler.error('Failed to reduce tags:', error)
-            // Fallback: return each tag as its own cluster
-            const fallback = {}
-            tags.slice(0, amount).forEach(tag => {
-                fallback[tag] = [tag]
-            })
-            return fallback
-        }
     }
 
     /**

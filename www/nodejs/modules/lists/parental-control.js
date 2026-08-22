@@ -31,7 +31,21 @@ class ParentalControl extends EventEmitter {
         });
         // Initialize terms asynchronously
         this.setupTerms().catch(err => console.error('Error setting up parental control terms:', err));
-        renderer.ready && renderer.ready(() => this.update());
+
+        // Watch for cloud configure updates — substitui o polling manual do update()
+        this._unsubConfigure = cloud.sync('configure', c => {
+            if (c && c.adultTerms) {
+                const newDefaultTerms = typeof c.adultTerms === 'string'
+                    ? this.keywords(c.adultTerms)
+                    : (Array.isArray(c.adultTerms) ? c.adultTerms.map(t => String(t).toLowerCase().trim()).filter(t => t.length >= 2) : []);
+
+                const termsChanged = JSON.stringify([...newDefaultTerms].sort()) !== JSON.stringify([...this.defaultTerms].sort());
+                if (termsChanged) {
+                    this.defaultTerms = newDefaultTerms;
+                    this.setupTerms().catch(err => console.error('Error rebuilding terms regex:', err));
+                }
+            }
+        });
     }
     entry() {
         return {
@@ -186,24 +200,10 @@ class ParentalControl extends EventEmitter {
     /**
      * Get default terms from cloud configuration
      * These terms are always active and cannot be edited by user
+     * Agora mantidos atualizados via cloud.sync() no constructor
      */
-    async getDefaultTerms() {
-        try {
-            const cloudConfig = await cloud.get('configure').catch(err => {
-                console.error('Failed to get cloud config:', err);
-                return null;
-            });
-            if (cloudConfig && cloudConfig.adultTerms) {
-                if (typeof cloudConfig.adultTerms === 'string') {
-                    return this.keywords(cloudConfig.adultTerms);
-                } else if (Array.isArray(cloudConfig.adultTerms)) {
-                    return cloudConfig.adultTerms.map(t => String(t).toLowerCase().trim()).filter(t => t.length >= 2);
-                }
-            }
-        } catch (err) {
-            console.error('Error loading default terms from cloud:', err);
-        }
-        return [];
+    getDefaultTerms() {
+        return this.defaultTerms;
     }
     
     /**
@@ -228,12 +228,12 @@ class ParentalControl extends EventEmitter {
                 this.terms = [...new Set([...this.defaultTerms, ...this.customTerms])];
                 
                 if (this.terms.length) {
-                    // Escape backslashes first, then other special characters
+                    // Escape all regex metacharacters (except ^ and $, handled below) so terms match literally
+                    const escapeRegExp = (text) => text.replace(/[.*+?{}()|[\]\\]/g, '\\$&')
                     const rgx = this.terms
-                        .map(term => term.replace(/\\/g, '\\\\')) // Escape backslashes
+                        .map(escapeRegExp)
                         .join('|')
-                        .replace(/\+/g, '\\+') // Escape +
-                        .replace(/[\^\$]/g, '(\\b|\\W)') // Escape ^ and $
+                        .replace(/[\^\$]/g, '(\\b|\\W)') // Keep ^ and $ as word-boundary markers
                     try {
                         this.termsRegex = new RegExp(rgx, 'i')
                     } catch (err) {
@@ -253,29 +253,7 @@ class ParentalControl extends EventEmitter {
         return this.setupTermsPromise;
     }
     
-    /**
-     * Update default terms from cloud (called periodically)
-     */
-    update() {
-        // Always update default terms from cloud (they're not stored in config)
-        cloud.get('configure').then(c => {
-            if (c && c.adultTerms) {
-                const newDefaultTerms = typeof c.adultTerms === 'string' 
-                    ? this.keywords(c.adultTerms)
-                    : (Array.isArray(c.adultTerms) ? c.adultTerms.map(t => String(t).toLowerCase().trim()).filter(t => t.length >= 2) : []);
-                
-                // Only update if terms changed
-                const termsChanged = JSON.stringify(newDefaultTerms.sort()) !== JSON.stringify(this.defaultTerms.sort());
-                if (termsChanged) {
-                    this.defaultTerms = newDefaultTerms;
-                    this.setupTerms().catch(err => console.error('Error rebuilding terms regex:', err)); // Rebuild regex with new default terms
-                }
-            }
-        }).catch(err => {
-            console.error('Error updating default terms from cloud:', err);
-            setTimeout(() => this.update(), 10000);
-        });
-    }
+    // update() removido — substituído por cloud.sync('configure', ...) no constructor
     keywords(str) {
         return str.toLowerCase().split(',').filter(t => {
             return t.length >= 2;
