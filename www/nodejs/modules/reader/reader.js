@@ -10,15 +10,7 @@ class Reader extends Readable {
         super(opts);
         this.file = file;
         if (this.file) {
-            const resolvedFile = path.resolve(this.file);
-            const rootTemp = path.resolve(paths.temp) + path.sep;
-            const rootData = path.resolve(paths.data) + path.sep;
-            if (!resolvedFile.startsWith(rootTemp)) {
-                if (!resolvedFile.startsWith(rootData)) {
-                    throw new Error('Reader: file outside allowed roots');
-                }
-            }
-            this.file = resolvedFile;
+            this.file = path.resolve(this.file);
         }
         this.opts = opts;
         this.fd = null;
@@ -155,7 +147,15 @@ class Reader extends Readable {
     }
     async openFile() {
         try {
-            this.fileHandle = await fs.promises.open(this.file, 'r');
+            const file = this.file
+            const tempRoot = path.resolve(paths.temp) + path.sep
+            const dataRoot = path.resolve(paths.data) + path.sep
+            if (!file.startsWith(tempRoot)) {
+                if (!file.startsWith(dataRoot)) {
+                    throw new Error('Reader: file outside allowed roots');
+                }
+            }
+            this.fileHandle = await fs.promises.open(file, 'r');
             this.fd = this.fileHandle.fd;
             this.emit('open')
         } catch (err) {

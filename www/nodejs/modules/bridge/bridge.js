@@ -135,34 +135,27 @@ class BridgeServer extends EventEmitter {
                     pathname = path.join(paths.cwd, pathname)
                 }
                 pathname = path.normalize(pathname)
-                if (!mapped) {
-                    const root = path.resolve(paths.cwd)
-                    if (!pathname.startsWith(root + path.sep)) {
-                        response.statusCode = 403;
-                        response.end();
-                        return;
+                if (mapped) {
+                    const allowed = pathname
+                    const tempRoot = path.resolve(paths.temp)
+                    if (!allowed.startsWith(tempRoot + path.sep)) {
+                        const dataRoot = path.resolve(paths.data)
+                        if (!allowed.startsWith(dataRoot + path.sep)) {
+                            response.statusCode = 403;
+                            response.end();
+                            return;
+                        }
                     }
-                }
-                let err;
-                await fs.promises.access(pathname, fs.constants.R_OK).catch(e => err = e)
-                if (err) {
-                    response.statusCode = 404
-                    response.end(`File ${pathname} not found!`)
+                    await this.servePath(allowed, req, response)
                     return
                 }
-                const ext = path.parse(pathname).ext || ''
-                response.setHeader('Content-type', mimes[ext] || 'text/plain')
-                response.setHeader('Cache-Control', 'max-age=0, no-cache, no-store')
-                let stream = fs.createReadStream(pathname)
-                closed(req, response, stream, () => {
-                    console.log(`${req.method} ${req.url} CLOSED`)
-                    if (stream) {
-                        stream.destroy()
-                        stream = null
-                    }
-                    response.end()
-                }, { closeOnError: true })
-                stream.pipe(response)
+                const root = path.resolve(paths.cwd)
+                if (!pathname.startsWith(root + path.sep)) {
+                    response.statusCode = 403;
+                    response.end();
+                    return;
+                }
+                await this.servePath(pathname, req, response)
             }
         })
         this.server.listen(0, this.opts.addr, err => {
@@ -199,6 +192,28 @@ class BridgeServer extends EventEmitter {
                 return 'http://' + this.opts.addr + ':' + this.opts.port + '/' + path.substr(2)
             }
         }
+    }
+    async servePath(pathname, req, response) {
+        let err;
+        await fs.promises.access(pathname, fs.constants.R_OK).catch(e => err = e)
+        if (err) {
+            response.statusCode = 404
+            response.end(`File ${pathname} not found!`)
+            return
+        }
+        const ext = path.parse(pathname).ext || ''
+        response.setHeader('Content-type', mimes[ext] || 'text/plain')
+        response.setHeader('Cache-Control', 'max-age=0, no-cache, no-store')
+        let stream = fs.createReadStream(pathname)
+        closed(req, response, stream, () => {
+            console.log(`${req.method} ${req.url} CLOSED`)
+            if (stream) {
+                stream.destroy()
+                stream = null
+            }
+            response.end()
+        }, { closeOnError: true })
+        stream.pipe(response)
     }
     destroy() {
         if (this.opts.debug) {
