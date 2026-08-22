@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { execSync } from 'child_process';
+import { execSync, execFileSync } from 'child_process';
 import { fileURLToPath } from 'url';
 import os from 'os';
 
@@ -166,12 +166,12 @@ const updateBuildGradleWithABI = (abi) => {
 };
 
 // Execute shell command with error handling
-const executeCommand = (command) => {
+const executeCommand = (command, args = [], cwd) => {
   try {
-    // execSync inherits process.env by default (includes JAVA_HOME)
-    execSync(command, { stdio: "inherit" });
+    // execFileSync passes args separately, avoiding shell interpretation of paths/values
+    execFileSync(command, args, { stdio: "inherit", cwd });
   } catch (error) {
-    console.error(`Command failed: ${command}`);
+    console.error(`Command failed: ${command} ${args.join(' ')}`);
     process.exit(error.status);
   }
 };
@@ -272,26 +272,24 @@ const buildApplication = async () => {
   // Copy bytenode to Android distribution directory (Android needs only bytenode, not koffi)
   copyBytenodeToAndroid();
 
-  // Build command
-  let buildCommand;
+  // Build command (execFileSync: paths/values passed as separate args, not shell-interpreted)
   
   if (isDebug) {
     console.log("Building DEBUG APK (unsigned)...");
     // Use gradlew.bat on Windows, gradlew on Unix
     const gradlewCmd = os.platform() === 'win32' ? 'gradlew.bat' : './gradlew';
-    buildCommand = `cd android && ${gradlewCmd} assembleDebug`;
+    executeCommand(gradlewCmd, ['assembleDebug'], path.join(__dirname, 'android'));
   } else {
-    buildCommand = `npx cap build android`;
+    const capArgs = ['cap', 'build', 'android'];
     if (signingProperties.storeFile && signingProperties.storePassword && signingProperties.keyAlias && signingProperties.keyPassword) {
       console.log("Signing properties found. Signing APK...");
-      buildCommand += ` --keystorepath ${signingProperties.storeFile} --keystorepass ${signingProperties.storePassword} --keystorealias ${signingProperties.keyAlias} --keystorealiaspass ${signingProperties.keyPassword}`;
+      capArgs.push('--keystorepath', signingProperties.storeFile, '--keystorepass', signingProperties.storePassword, '--keystorealias', signingProperties.keyAlias, '--keystorealiaspass', signingProperties.keyPassword);
     } else {
       console.log("Signing properties not found. Building unsigned APK...");
     }
-    buildCommand += ` --androidreleasetype APK --signing-type apksigner`;
+    capArgs.push('--androidreleasetype', 'APK', '--signing-type', 'apksigner');
+    executeCommand('npx', capArgs);
   }
-  
-  executeCommand(buildCommand);
 
   // For debug builds, the APK is in a different location with a different name
   let outputApkPath;

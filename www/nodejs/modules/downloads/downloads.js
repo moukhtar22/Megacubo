@@ -144,19 +144,21 @@ class Downloads extends EventEmitter {
                     });
                     download.start();
                 } else {
+                    let resolvedPath;
                     try {
-                        pathname = fs.realpathSync(path.resolve(paths.cwd, pathname))
-                        const root = fs.realpathSync(path.resolve(paths.cwd))
-                        if (pathname !== root && !pathname.startsWith(root + path.sep)) {
-                            res.statusCode = 403;
-                            res.end();
-                            return;
-                        }
+                        resolvedPath = fs.realpathSync(path.resolve(paths.cwd, pathname))
                     } catch (err) {
                         res.statusCode = 403;
                         res.end();
                         return;
                     }
+                    const root = fs.realpathSync(path.resolve(paths.cwd))
+                    if (!resolvedPath.startsWith(root + path.sep)) {
+                        res.statusCode = 403;
+                        res.end();
+                        return;
+                    }
+                    pathname = resolvedPath
                     fs.stat(pathname, (err, stat) => {
                         if (err) {
                             res.statusCode = 404;

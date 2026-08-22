@@ -11,11 +11,12 @@ class Reader extends Readable {
         this.file = file;
         if (this.file) {
             const resolvedFile = path.resolve(this.file);
-            const rootTemp = path.resolve(paths.temp);
-            const rootData = path.resolve(paths.data);
-            if (resolvedFile !== rootTemp && !resolvedFile.startsWith(rootTemp + path.sep) &&
-                resolvedFile !== rootData && !resolvedFile.startsWith(rootData + path.sep)) {
-                throw new Error('Reader: file outside allowed roots');
+            const rootTemp = path.resolve(paths.temp) + path.sep;
+            const rootData = path.resolve(paths.data) + path.sep;
+            if (!resolvedFile.startsWith(rootTemp)) {
+                if (!resolvedFile.startsWith(rootData)) {
+                    throw new Error('Reader: file outside allowed roots');
+                }
             }
             this.file = resolvedFile;
         }

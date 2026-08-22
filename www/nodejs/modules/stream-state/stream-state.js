@@ -124,6 +124,8 @@ class StreamState extends EventEmitter {
                 if (typeof(this.data[url]) == 'undefined') {
                     this.data[url] = {};
                 }
+                // Guard both the entry key (url) and the property key (k) against prototype pollution
+                if (url === '__proto__' || url === 'constructor' || url === 'prototype') return
                 const keyAtts = ['position', 'duration'];
                 Object.keys(atts).forEach(k => {
                     if (k === '__proto__' || k === 'constructor' || k === 'prototype') return

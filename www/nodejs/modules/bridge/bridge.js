@@ -135,11 +135,13 @@ class BridgeServer extends EventEmitter {
                     pathname = path.join(paths.cwd, pathname)
                 }
                 pathname = path.normalize(pathname)
-                const root = path.resolve(paths.cwd)
-                if (!pathname || (!mapped && (pathname === root || !pathname.startsWith(root + path.sep)))) {
-                    response.statusCode = 403;
-                    response.end();
-                    return;
+                if (!mapped) {
+                    const root = path.resolve(paths.cwd)
+                    if (!pathname.startsWith(root + path.sep)) {
+                        response.statusCode = 403;
+                        response.end();
+                        return;
+                    }
                 }
                 let err;
                 await fs.promises.access(pathname, fs.constants.R_OK).catch(e => err = e)

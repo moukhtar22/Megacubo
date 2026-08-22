@@ -91,7 +91,7 @@ class StreamerFFmpeg extends EventEmitter {
         }
         const file = path.resolve(this.opts.workDir, String(this.uid), filePath);
         const root = path.resolve(this.opts.workDir);
-        if (file !== root && !file.startsWith(root + path.sep)) {
+        if (!file.startsWith(root + path.sep)) {
             throw new Error('File is not under root');
         }
         return new Promise((resolve, reject) => {
@@ -222,11 +222,12 @@ class StreamerFFmpeg extends EventEmitter {
         return url;
     }
     async prepareFile(file) {
-        file = path.resolve(file);
+        const resolved = path.resolve(file);
         const root = path.resolve(this.opts.workDir);
-        if (file !== root && !file.startsWith(root + path.sep)) {
+        if (!resolved.startsWith(root + path.sep)) {
             throw new Error('File is not under root');
         }
+        file = resolved;
         const stat = await fs.promises.stat(file).catch(() => {})
         if (stat && stat.size) {
             return stat;

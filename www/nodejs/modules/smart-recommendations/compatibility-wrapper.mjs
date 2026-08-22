@@ -1462,14 +1462,24 @@ class SmartRecommendationsCompatibility extends EventEmitter {
         const name1 = channel1.name.toLowerCase()
         const name2 = channel2.name.toLowerCase()
 
-        // Extract base name (remove numbers and common suffixes) without ReDoS-prone regex
+        // Extract base name (remove numbers and common suffixes) without regex (avoids ReDoS)
         const stripSuffix = (n) => {
-            let out = n.replace(/\d+$/, '').replace(/\s+$/, '')
-            const parts = out.split(/\s+/)
-            const last = parts[parts.length - 1]
-            if (parts.length > 1 && last && ['tv', 'channel', 'brasil'].includes(last)) {
-                parts.pop()
-                out = parts.join(' ')
+            let out = n
+            // Strip trailing digits
+            let i = out.length
+            while (i > 0) {
+                const c = out.charCodeAt(i - 1)
+                if (c >= 48 && c <= 57) i--
+                else break
+            }
+            if (i < out.length) out = out.slice(0, i)
+            // Strip trailing whitespace
+            out = out.trimEnd()
+            // Strip a trailing suffix word (tv/channel/brasil) preceded by whitespace
+            const idx = out.lastIndexOf(' ')
+            const last = idx === -1 ? out : out.slice(idx + 1)
+            if (idx !== -1 && ['tv', 'channel', 'brasil'].includes(last)) {
+                out = out.slice(0, idx).trimEnd()
             }
             return out
         }
