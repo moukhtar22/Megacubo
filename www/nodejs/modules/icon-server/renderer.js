@@ -24,10 +24,26 @@ export class ImageProcessor {
 
             // Ensure OffscreenCanvas exists in worker scope via a minimal polyfill
             (function(global){
-                if (typeof global.OffscreenCanvas !== 'undefined') return;
+                // In some Chromium/WebView environments, OffscreenCanvas is a global
+                // lexical binding initialized late; reading it synchronously (even via
+                // typeof global.OffscreenCanvas) throws the TDZ error "Cannot access
+                // 'OffscreenCanvas' before initialization".
+                let nativeWorks = false;
+                try {
+                    if (Object.getOwnPropertyDescriptor(global, 'OffscreenCanvas')) {
+                        const testCanvas = new global.OffscreenCanvas(1, 1);
+                        const testCtx = testCanvas.getContext('2d');
+                        nativeWorks = !!testCtx; // Native implementation works
+                    }
+                } catch(e) {}
+                if (nativeWorks) return;
+                const hasDocument = typeof self !== 'undefined' && typeof self.document !== 'undefined';
+                if (!hasDocument) {
+                    console.warn('OffscreenCanvas polyfill: no DOM available, canvas operations will be limited');
+                }
                 class OffscreenCanvas {
                     constructor(w,h){
-                        this._canvas = (typeof self !== 'undefined' && typeof self.document !== 'undefined') ? self.document.createElement('canvas') : null;
+                        this._canvas = hasDocument ? self.document.createElement('canvas') : null;
                         if (this._canvas) { this._canvas.width = w; this._canvas.height = h }
                         Object.defineProperty(this, 'width', { get: () => this._canvas ? this._canvas.width : w, set: v => { if (this._canvas) this._canvas.width = v } });
                         Object.defineProperty(this, 'height', { get: () => this._canvas ? this._canvas.height : h, set: v => { if (this._canvas) this._canvas.height = v } });
@@ -35,7 +51,9 @@ export class ImageProcessor {
                     getContext(t, opts){ return this._canvas ? this._canvas.getContext(t, opts) : null }
                     convertToBlob(options){ return new Promise((resolve) => { if (!this._canvas) return resolve(new Blob()); this._canvas.toBlob(resolve, options && options.type, options && options.quality); }) }
                 }
-                global.OffscreenCanvas = OffscreenCanvas;
+                try { global.OffscreenCanvas = OffscreenCanvas; } catch(e) {
+                    try { Object.defineProperty(global, 'OffscreenCanvas', { value: OffscreenCanvas, writable: true, configurable: true }); } catch(e2) {}
+                }
             })(typeof self !== 'undefined' ? self : globalThis);
 
             const ALPHA_IGNORE_LEVEL = 255 * 0.1; // More strict - only consider truly transparent pixels (alpha < 10%)
@@ -214,6 +232,9 @@ export class ImageProcessor {
                 }
                 const canvas = new OffscreenCanvas(width, height)
                 const ctx = canvas.getContext('2d')
+                if (!ctx) {
+                    throw new Error('drawImage: canvas context is null - OffscreenCanvas not available in this environment')
+                }
                 ctx.drawImage(imageBitmap, 0, 0, imageBitmap.width, imageBitmap.height, 0, 0, width, height)
                 const imageData = ctx.getImageData(0, 0, width, height)
                 return {ctx, canvas, imageBitmap, imageData}
@@ -282,6 +303,9 @@ export class ImageProcessor {
                 if (bottom > top && right > left && !(left === 0 && right === width && top === 0 && bottom === height)) {DEBUG && console.log('autocrop')
                     const croppedCanvas = new OffscreenCanvas(right - left, bottom - top)
                     const croppedCtx = croppedCanvas.getContext('2d')
+                    if (!croppedCtx) {
+                        throw new Error('drawImage: cropped canvas context is null - OffscreenCanvas not available')
+                    }
                     croppedCtx.drawImage(canvas, left, top, croppedCanvas.width, croppedCanvas.height, 0, 0, croppedCanvas.width, croppedCanvas.height);
                     DEBUG && console.log('autocrop')
                     return { croppedImage: croppedCanvas, changed: true }

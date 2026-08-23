@@ -1,0 +1,24 @@
+{
+  "id": "configuring",
+  "title": "configuring",
+  "description": "🏠 > Guia do Usuário > Configurando",
+  "source": "@site/i18n/pt-BR/docusaurus-plugin-content-docs/current/configuring.md",
+  "sourceDirName": ".",
+  "slug": "/configuring",
+  "permalink": "/Megacubo/pt-BR/docs/configuring",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/EdenwareApps/Megacubo/tree/main/website/docs/configuring.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Community Mode",
+    "permalink": "/Megacubo/pt-BR/docs/community-mode"
+  },
+  "next": {
+    "title": "Contributing",
+    "permalink": "/Megacubo/pt-BR/docs/contributing"
+  }
+}

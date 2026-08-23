@@ -1,0 +1,437 @@
+{
+  "entrypoints": [
+    "main"
+  ],
+  "origins": {
+    "237": [
+      237
+    ],
+    "285": [
+      61,
+      401,
+      869,
+      285
+    ],
+    "436": [
+      436
+    ],
+    "17896441": [
+      285,
+      869,
+      401
+    ],
+    "98829793": [
+      786
+    ],
+    "main": [
+      354,
+      869,
+      792
+    ],
+    "runtime~main": [
+      792,
+      869,
+      354
+    ],
+    "0d831542": [
+      592
+    ],
+    "14f21cba": [
+      503
+    ],
+    "19b14462": [
+      854
+    ],
+    "1f391b9e": [
+      285,
+      869,
+      61
+    ],
+    "2150aafd": [
+      827
+    ],
+    "4c27e4d6": [
+      196
+    ],
+    "4c678320": [
+      664
+    ],
+    "517643b1": [
+      830
+    ],
+    "5dd9c0f1": [
+      555
+    ],
+    "5e95c892": [
+      647
+    ],
+    "670b9a03": [
+      125
+    ],
+    "8420b8df": [
+      681
+    ],
+    "94c9c887": [
+      590
+    ],
+    "9c9a091a": [
+      430
+    ],
+    "a7456010": [
+      235
+    ],
+    "a7bd4aaa": [
+      98
+    ],
+    "a82f8043": [
+      459
+    ],
+    "a94703ab": [
+      869,
+      48
+    ],
+    "aba21aa0": [
+      742
+    ],
+    "bce360a2": [
+      37
+    ],
+    "c3ccdbc8": [
+      468
+    ],
+    "c4f5d8e4": [
+      869,
+      634
+    ],
+    "ca770db9": [
+      810
+    ],
+    "df1464ec": [
+      172
+    ],
+    "f2ae99f3": [
+      878
+    ],
+    "f979d1f9": [
+      750
+    ],
+    "styles": [
+      48,
+      61,
+      285,
+      354,
+      401,
+      634,
+      792,
+      869
+    ]
+  },
+  "assets": {
+    "37": {
+      "js": [
+        {
+          "file": "assets/js/bce360a2.b92695a9.js",
+          "hash": "df536385ac3fdf7f",
+          "publicPath": "/Megacubo/pt-BR/assets/js/bce360a2.b92695a9.js"
+        }
+      ]
+    },
+    "48": {
+      "js": [
+        {
+          "file": "assets/js/a94703ab.836168bb.js",
+          "hash": "2e41557ee9f38901",
+          "publicPath": "/Megacubo/pt-BR/assets/js/a94703ab.836168bb.js"
+        }
+      ]
+    },
+    "61": {
+      "js": [
+        {
+          "file": "assets/js/1f391b9e.e00271c2.js",
+          "hash": "42248252a334c746",
+          "publicPath": "/Megacubo/pt-BR/assets/js/1f391b9e.e00271c2.js"
+        }
+      ]
+    },
+    "98": {
+      "js": [
+        {
+          "file": "assets/js/a7bd4aaa.0b489c09.js",
+          "hash": "4cda51ca15568f74",
+          "publicPath": "/Megacubo/pt-BR/assets/js/a7bd4aaa.0b489c09.js"
+        }
+      ]
+    },
+    "125": {
+      "js": [
+        {
+          "file": "assets/js/670b9a03.9bd876d2.js",
+          "hash": "a2770c3a6bafd289",
+          "publicPath": "/Megacubo/pt-BR/assets/js/670b9a03.9bd876d2.js"
+        }
+      ]
+    },
+    "172": {
+      "js": [
+        {
+          "file": "assets/js/df1464ec.81d859d8.js",
+          "hash": "f03fde59896e2334",
+          "publicPath": "/Megacubo/pt-BR/assets/js/df1464ec.81d859d8.js"
+        }
+      ]
+    },
+    "196": {
+      "js": [
+        {
+          "file": "assets/js/4c27e4d6.1883c9d9.js",
+          "hash": "88125806e527c3df",
+          "publicPath": "/Megacubo/pt-BR/assets/js/4c27e4d6.1883c9d9.js"
+        }
+      ]
+    },
+    "235": {
+      "js": [
+        {
+          "file": "assets/js/a7456010.7bc947ef.js",
+          "hash": "7e53e35c3dc4a791",
+          "publicPath": "/Megacubo/pt-BR/assets/js/a7456010.7bc947ef.js"
+        }
+      ]
+    },
+    "237": {
+      "js": [
+        {
+          "file": "assets/js/237.70ab64c4.js",
+          "hash": "6a29a080e40a8eef",
+          "publicPath": "/Megacubo/pt-BR/assets/js/237.70ab64c4.js"
+        }
+      ]
+    },
+    "285": {
+      "js": [
+        {
+          "file": "assets/js/285.dd9b22b5.js",
+          "hash": "892be6b411b48576",
+          "publicPath": "/Megacubo/pt-BR/assets/js/285.dd9b22b5.js"
+        }
+      ]
+    },
+    "354": {
+      "js": [
+        {
+          "file": "assets/js/runtime~main.c9432376.js",
+          "hash": "48d85f2a259374e7",
+          "publicPath": "/Megacubo/pt-BR/assets/js/runtime~main.c9432376.js"
+        }
+      ]
+    },
+    "401": {
+      "js": [
+        {
+          "file": "assets/js/17896441.ac8f6650.js",
+          "hash": "edf54647ff373061",
+          "publicPath": "/Megacubo/pt-BR/assets/js/17896441.ac8f6650.js"
+        }
+      ]
+    },
+    "430": {
+      "js": [
+        {
+          "file": "assets/js/9c9a091a.b699e0aa.js",
+          "hash": "9eb2c47d9824ae29",
+          "publicPath": "/Megacubo/pt-BR/assets/js/9c9a091a.b699e0aa.js"
+        }
+      ]
+    },
+    "436": {
+      "js": [
+        {
+          "file": "assets/js/436.058a0146.js",
+          "hash": "98fbb6023f77d559",
+          "publicPath": "/Megacubo/pt-BR/assets/js/436.058a0146.js"
+        }
+      ]
+    },
+    "459": {
+      "js": [
+        {
+          "file": "assets/js/a82f8043.e7b8942a.js",
+          "hash": "fc0516c2020fe069",
+          "publicPath": "/Megacubo/pt-BR/assets/js/a82f8043.e7b8942a.js"
+        }
+      ]
+    },
+    "468": {
+      "js": [
+        {
+          "file": "assets/js/c3ccdbc8.3c419cd0.js",
+          "hash": "02973289f64ba213",
+          "publicPath": "/Megacubo/pt-BR/assets/js/c3ccdbc8.3c419cd0.js"
+        }
+      ]
+    },
+    "503": {
+      "js": [
+        {
+          "file": "assets/js/14f21cba.b7214a20.js",
+          "hash": "d55c5ea5e0596119",
+          "publicPath": "/Megacubo/pt-BR/assets/js/14f21cba.b7214a20.js"
+        }
+      ]
+    },
+    "555": {
+      "js": [
+        {
+          "file": "assets/js/5dd9c0f1.fa6e39f1.js",
+          "hash": "adc49b10dc081d27",
+          "publicPath": "/Megacubo/pt-BR/assets/js/5dd9c0f1.fa6e39f1.js"
+        }
+      ]
+    },
+    "590": {
+      "js": [
+        {
+          "file": "assets/js/94c9c887.19349c99.js",
+          "hash": "0eae5946aa68ac39",
+          "publicPath": "/Megacubo/pt-BR/assets/js/94c9c887.19349c99.js"
+        }
+      ]
+    },
+    "592": {
+      "js": [
+        {
+          "file": "assets/js/0d831542.d9774b72.js",
+          "hash": "28581fe61cee5dd1",
+          "publicPath": "/Megacubo/pt-BR/assets/js/0d831542.d9774b72.js"
+        }
+      ]
+    },
+    "634": {
+      "js": [
+        {
+          "file": "assets/js/c4f5d8e4.0b07792e.js",
+          "hash": "5b433772950e0f20",
+          "publicPath": "/Megacubo/pt-BR/assets/js/c4f5d8e4.0b07792e.js"
+        }
+      ]
+    },
+    "647": {
+      "js": [
+        {
+          "file": "assets/js/5e95c892.9503a094.js",
+          "hash": "a1d76cd622b02243",
+          "publicPath": "/Megacubo/pt-BR/assets/js/5e95c892.9503a094.js"
+        }
+      ]
+    },
+    "664": {
+      "js": [
+        {
+          "file": "assets/js/4c678320.472cabc3.js",
+          "hash": "188dc1d834ae7d36",
+          "publicPath": "/Megacubo/pt-BR/assets/js/4c678320.472cabc3.js"
+        }
+      ]
+    },
+    "681": {
+      "js": [
+        {
+          "file": "assets/js/8420b8df.56c9000e.js",
+          "hash": "0edde83d0c302da5",
+          "publicPath": "/Megacubo/pt-BR/assets/js/8420b8df.56c9000e.js"
+        }
+      ]
+    },
+    "742": {
+      "js": [
+        {
+          "file": "assets/js/aba21aa0.6c061b4f.js",
+          "hash": "9d2d30e03daa1801",
+          "publicPath": "/Megacubo/pt-BR/assets/js/aba21aa0.6c061b4f.js"
+        }
+      ]
+    },
+    "750": {
+      "js": [
+        {
+          "file": "assets/js/f979d1f9.0f8a3ab0.js",
+          "hash": "4be65c0f98cc8c5a",
+          "publicPath": "/Megacubo/pt-BR/assets/js/f979d1f9.0f8a3ab0.js"
+        }
+      ]
+    },
+    "786": {
+      "js": [
+        {
+          "file": "assets/js/98829793.d192aaa7.js",
+          "hash": "e44c53e5467a18a3",
+          "publicPath": "/Megacubo/pt-BR/assets/js/98829793.d192aaa7.js"
+        }
+      ]
+    },
+    "792": {
+      "js": [
+        {
+          "file": "assets/js/main.871e62e0.js",
+          "hash": "58a040a4f97ad521",
+          "publicPath": "/Megacubo/pt-BR/assets/js/main.871e62e0.js"
+        }
+      ]
+    },
+    "810": {
+      "js": [
+        {
+          "file": "assets/js/ca770db9.00bb82c7.js",
+          "hash": "bcd2ef5bfd57cd8f",
+          "publicPath": "/Megacubo/pt-BR/assets/js/ca770db9.00bb82c7.js"
+        }
+      ]
+    },
+    "827": {
+      "js": [
+        {
+          "file": "assets/js/2150aafd.43d915e0.js",
+          "hash": "13e84d3bae6178f0",
+          "publicPath": "/Megacubo/pt-BR/assets/js/2150aafd.43d915e0.js"
+        }
+      ]
+    },
+    "830": {
+      "js": [
+        {
+          "file": "assets/js/517643b1.85161ddc.js",
+          "hash": "682b783c3e921b05",
+          "publicPath": "/Megacubo/pt-BR/assets/js/517643b1.85161ddc.js"
+        }
+      ]
+    },
+    "854": {
+      "js": [
+        {
+          "file": "assets/js/19b14462.359eb3eb.js",
+          "hash": "e3bb0d4c97a5edd5",
+          "publicPath": "/Megacubo/pt-BR/assets/js/19b14462.359eb3eb.js"
+        }
+      ]
+    },
+    "869": {
+      "css": [
+        {
+          "file": "assets/css/styles.f97016d8.css",
+          "hash": "a05ebcb601d48a5f",
+          "publicPath": "/Megacubo/pt-BR/assets/css/styles.f97016d8.css"
+        }
+      ]
+    },
+    "878": {
+      "js": [
+        {
+          "file": "assets/js/f2ae99f3.2bc53c3a.js",
+          "hash": "b0de25b2b77aa45a",
+          "publicPath": "/Megacubo/pt-BR/assets/js/f2ae99f3.2bc53c3a.js"
+        }
+      ]
+    }
+  }
+}

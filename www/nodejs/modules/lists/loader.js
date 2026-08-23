@@ -369,6 +369,12 @@ class ListsLoader extends EventEmitter {
     }
 
     async prepareUpdater() {
+        // App is shutting down - creating a new worker would throw
+        // "Worker already terminated: updater-worker.js"
+        if (global.isExiting) {
+            return;
+        }
+
         // Check if needs recreation: if doesn't exist, if worker instance is finished, or if updater is finished
         const needsRecreate = !this.updater || 
                               !this.updaterWorkerInstance || 
@@ -394,13 +400,23 @@ class ListsLoader extends EventEmitter {
             
             this.uid = this.uid || randomUUID();
             // Dedicated MultiWorker for updater with higher heap (list/EPG updates can be heavy)
-            const updaterWorker = new MultiWorker({
-                resourceLimits: {
-                    maxOldGenerationSizeMb: 2560,
-                    maxYoungGenerationSizeMb: 384
+            let updaterWorker;
+            try {
+                updaterWorker = new MultiWorker({
+                    resourceLimits: {
+                        maxOldGenerationSizeMb: 2560,
+                        maxYoungGenerationSizeMb: 384
+                    }
+                });
+                this.updater = updaterWorker.load(path.join(getDirname(), 'updater-worker.js'));
+            } catch (e) {
+                // Expected when the app is exiting; do not surface as an unhandled rejection
+                if (global.isExiting) {
+                    console.warn('[lists.loader] Skipping updater worker creation during shutdown');
+                    return;
                 }
-            });
-            this.updater = updaterWorker.load(path.join(getDirname(), 'updater-worker.js'));
+                throw e;
+            }
             if (!this.updater?.update) throw new Error('Failed to create updater worker');
             console.log('[lists.loader] prepareUpdater() created new updater worker');
             
@@ -792,8 +808,9 @@ class ListsLoader extends EventEmitter {
             return;
         }
 
-        // don't fire if we already have any loaded my lists
-        if (this.master.loadedListsCount('my') > 0) {
+        // don't fire if we already have any loaded own/public lists
+        // (list origins are 'own', 'public' or 'community' — there is no 'my' origin)
+        if (this.master.loadedListsCount('own') > 0 || this.master.loadedListsCount('public') > 0) {
             return;
         }
 

@@ -1,0 +1,24 @@
+{
+  "id": "hotkeys",
+  "title": "hotkeys",
+  "description": "🏠 > User Guide > Hotkeys",
+  "source": "@site/docs/hotkeys.md",
+  "sourceDirName": ".",
+  "slug": "/hotkeys",
+  "permalink": "/Megacubo/docs/hotkeys",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/EdenwareApps/Megacubo/tree/main/website/docs/hotkeys.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "FAQ",
+    "permalink": "/Megacubo/docs/faq"
+  },
+  "next": {
+    "title": "Installation",
+    "permalink": "/Megacubo/docs/installation"
+  }
+}

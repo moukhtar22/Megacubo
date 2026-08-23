@@ -2,7 +2,6 @@ import { EventEmitter } from 'node:events'
 import { ErrorHandler } from './ErrorHandler.mjs'
 import { EnhancedRecommendations } from './EnhancedRecommendations.mjs'
 import { SmartCache } from './SmartCache.mjs'
-import { AIRecommendationEngine } from './AIRecommendationEngine.mjs'
 
 /**
  * Smart Recommendations Module
@@ -12,7 +11,6 @@ class SmartRecommendationsModule extends EventEmitter {
     constructor() {
         super()
         this.readyState = 0
-        this.aiClient = null
         this.enhancedRecommendations = null
         this.cache = null
         this.config = {
@@ -26,24 +24,18 @@ class SmartRecommendationsModule extends EventEmitter {
 
     /**
      * Initialize the smart recommendations system
-     * @param {Object} aiClient - AI Client instance
      * @param {Object} options - Configuration options
      */
-    async initialize(aiClient, options = {}) {
+    async initialize(options = {}) {
         try {
             ErrorHandler.info('🚀 Initializing Smart Recommendations System...')
             
-            this.aiClient = aiClient
             this.config = { ...this.config, ...options }
-            
-            if (!this.aiClient) {
-                throw new Error('AI Client instance is required for smart recommendations')
-            }
 
-            // Initialize components with AI Client (importing inline to avoid circular deps)
+            // Initialize components (importing inline to avoid circular deps)
             const { EnhancedRecommendations } = await import('./EnhancedRecommendations.mjs')
             
-            this.enhancedRecommendations = new EnhancedRecommendations(this.aiClient)
+            this.enhancedRecommendations = new EnhancedRecommendations()
             // AITagExpansion disabled - server no longer provides valid expansions
             // Learning removed - AI is already trained
             this.cache = new SmartCache({
@@ -154,12 +146,10 @@ class SmartRecommendationsModule extends EventEmitter {
         return {
             readyState: this.readyState,
             enabled: this.config.enabled,
-            aiClientAvailable: !!this.aiClient,
             components: {
                 enhancedRecommendations: !!this.enhancedRecommendations,
                 cache: !!this.cache
             },
-            aiClientStats: this.aiClient?.getStats() || {},
             health: this.enhancedRecommendations?.getHealthStatus() || {}
         }
     }
@@ -170,8 +160,7 @@ class SmartRecommendationsModule extends EventEmitter {
      */
     isReady() {
         return this.readyState === 1 && 
-               this.enhancedRecommendations && 
-               this.aiClient
+               this.enhancedRecommendations
     }
 
     /**
@@ -228,7 +217,6 @@ class SmartRecommendationsModule extends EventEmitter {
             
             this.enhancedRecommendations = null
             this.cache = null
-            this.aiClient = null
             
             this.readyState = -1
             this.removeAllListeners()
@@ -249,6 +237,5 @@ export default smartRecommendations
 // Export individual components for advanced usage
 export {
     EnhancedRecommendations,
-    AIRecommendationEngine,
     SmartCache
 }

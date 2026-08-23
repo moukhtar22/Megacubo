@@ -1,0 +1,24 @@
+{
+  "id": "introduction",
+  "title": "introduction",
+  "description": "🏠 > Introdução",
+  "source": "@site/i18n/pt-BR/docusaurus-plugin-content-docs/current/introduction.md",
+  "sourceDirName": ".",
+  "slug": "/introduction",
+  "permalink": "/Megacubo/pt-BR/docs/introduction",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/EdenwareApps/Megacubo/tree/main/website/docs/introduction.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Installation",
+    "permalink": "/Megacubo/pt-BR/docs/installation"
+  },
+  "next": {
+    "title": "Legal",
+    "permalink": "/Megacubo/pt-BR/docs/legal"
+  }
+}

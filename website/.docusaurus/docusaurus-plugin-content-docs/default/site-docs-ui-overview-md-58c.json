@@ -1,0 +1,24 @@
+{
+  "id": "ui-overview",
+  "title": "ui-overview",
+  "description": "🏠 > IPTV Player Interface",
+  "source": "@site/docs/ui-overview.md",
+  "sourceDirName": ".",
+  "slug": "/ui-overview",
+  "permalink": "/Megacubo/docs/ui-overview",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/EdenwareApps/Megacubo/tree/main/website/docs/ui-overview.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Troubleshooting",
+    "permalink": "/Megacubo/docs/troubleshooting"
+  },
+  "next": {
+    "title": "Using IPTV Lists",
+    "permalink": "/Megacubo/docs/using-iptv-lists"
+  }
+}

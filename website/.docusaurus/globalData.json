@@ -1,0 +1,118 @@
+{
+  "docusaurus-plugin-content-docs": {
+    "default": {
+      "path": "/Megacubo/pt-BR/docs",
+      "versions": [
+        {
+          "name": "current",
+          "label": "Próximo",
+          "isLast": true,
+          "path": "/Megacubo/pt-BR/docs",
+          "mainDocId": "building",
+          "docs": [
+            {
+              "id": "building",
+              "path": "/Megacubo/pt-BR/docs/building",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "community-mode",
+              "path": "/Megacubo/pt-BR/docs/community-mode",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "configuring",
+              "path": "/Megacubo/pt-BR/docs/configuring",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "contributing",
+              "path": "/Megacubo/pt-BR/docs/contributing",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "developing",
+              "path": "/Megacubo/pt-BR/docs/developing",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "faq",
+              "path": "/Megacubo/pt-BR/docs/faq",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "hotkeys",
+              "path": "/Megacubo/pt-BR/docs/hotkeys",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "installation",
+              "path": "/Megacubo/pt-BR/docs/installation",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "introduction",
+              "path": "/Megacubo/pt-BR/docs/introduction",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "legal",
+              "path": "/Megacubo/pt-BR/docs/legal",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "performance",
+              "path": "/Megacubo/pt-BR/docs/performance",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "recommendations",
+              "path": "/Megacubo/pt-BR/docs/recommendations",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "setup-wizard",
+              "path": "/Megacubo/pt-BR/docs/setup-wizard",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "support",
+              "path": "/Megacubo/pt-BR/docs/support",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "troubleshooting",
+              "path": "/Megacubo/pt-BR/docs/troubleshooting",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "ui-overview",
+              "path": "/Megacubo/pt-BR/docs/ui-overview",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "using-iptv-lists",
+              "path": "/Megacubo/pt-BR/docs/using-iptv-lists",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "watching-live-tv",
+              "path": "/Megacubo/pt-BR/docs/watching-live-tv",
+              "sidebar": "tutorialSidebar"
+            }
+          ],
+          "draftIds": [],
+          "sidebars": {
+            "tutorialSidebar": {
+              "link": {
+                "path": "/Megacubo/pt-BR/docs/building",
+                "label": "Construção"
+              }
+            }
+          }
+        }
+      ],
+      "breadcrumbs": true
+    }
+  }
+}

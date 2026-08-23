@@ -42,7 +42,7 @@ const rendererPlugins = [
     preprocess: sveltePreprocess(),
     compilerOptions: { css: 'injected', compatibility: { componentApi: 4 } }
   }),
-  babel({ ...babelRendererPolyfills, babelHelpers: 'bundled', extensions: ['.js', '.svelte'], skipPreflightCheck: true }),
+  babel({ ...babelRendererPolyfills, babelHelpers: 'bundled', extensions: ['.js', '.svelte'], skipPreflightCheck: true, configFile: false, babelrc: false }),
   resolve({
     browser: true,
     exportConditions: ['svelte', 'node', 'import', 'default'],
@@ -60,10 +60,14 @@ const rendererPlugins = [
   polyfills(),
   replace(replaceOpts),
   isProduction && terser({
+    keep_classnames: true,
+    keep_fnames: true,
     compress: {
       drop_console: false,
       drop_debugger: true,
-      pure_funcs: ['console.debug']
+      pure_funcs: ['console.debug'],
+      reduce_vars: false,
+      inline: false
     }
   })
 ].filter(Boolean);

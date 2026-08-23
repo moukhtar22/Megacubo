@@ -293,8 +293,11 @@ export class ChannelsList extends EventEmitter {
         // For each category in base and current
         const allCats = new Set([...Object.keys(base), ...Object.keys(current)])
         for (const cat of allCats) {
-            const baseChannels = new Set(base[cat] || [])
-            const currentChannels = new Set(current[cat] || [])
+            // Guard against non-array category values (caused "(o[r] || []).map is not a function")
+            const baseArr = Array.isArray(base[cat]) ? base[cat] : []
+            const currentArr = Array.isArray(current[cat]) ? current[cat] : []
+            const baseChannels = new Set(baseArr)
+            const currentChannels = new Set(currentArr)
             // Additions: in current but not in base
             const additions = [...currentChannels].filter(ch => !baseChannels.has(ch))
             if (additions.length) {
@@ -308,8 +311,8 @@ export class ChannelsList extends EventEmitter {
         }
         // For renames and term changes, compare expanded names
         for (const cat of allCats) {
-            const baseChannels = (base[cat] || []).map(ch => this.expandName(ch))
-            const currentChannels = (current[cat] || []).map(ch => this.expandName(ch))
+            const baseChannels = (Array.isArray(base[cat]) ? base[cat] : []).map(ch => this.expandName(ch))
+            const currentChannels = (Array.isArray(current[cat]) ? current[cat] : []).map(ch => this.expandName(ch))
             // Create maps for quick lookup
             const baseMap = new Map(baseChannels.map(({ name, terms }) => [name, terms.join(' ')]))
             const currentMap = new Map(currentChannels.map(({ name, terms }) => [name, terms.join(' ')]))

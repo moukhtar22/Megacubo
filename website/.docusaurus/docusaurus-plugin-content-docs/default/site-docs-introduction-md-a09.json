@@ -1,0 +1,24 @@
+{
+  "id": "introduction",
+  "title": "introduction",
+  "description": "🏠 > Introduction",
+  "source": "@site/docs/introduction.md",
+  "sourceDirName": ".",
+  "slug": "/introduction",
+  "permalink": "/Megacubo/docs/introduction",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/EdenwareApps/Megacubo/tree/main/website/docs/introduction.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Installation",
+    "permalink": "/Megacubo/docs/installation"
+  },
+  "next": {
+    "title": "Legal",
+    "permalink": "/Megacubo/docs/legal"
+  }
+}

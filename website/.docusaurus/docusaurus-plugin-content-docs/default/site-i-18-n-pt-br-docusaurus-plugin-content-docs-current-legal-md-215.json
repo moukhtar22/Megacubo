@@ -1,0 +1,24 @@
+{
+  "id": "legal",
+  "title": "legal",
+  "description": "🏠 > Aviso Legal",
+  "source": "@site/i18n/pt-BR/docusaurus-plugin-content-docs/current/legal.md",
+  "sourceDirName": ".",
+  "slug": "/legal",
+  "permalink": "/Megacubo/pt-BR/docs/legal",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/EdenwareApps/Megacubo/tree/main/website/docs/legal.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Introduction",
+    "permalink": "/Megacubo/pt-BR/docs/introduction"
+  },
+  "next": {
+    "title": "Performance",
+    "permalink": "/Megacubo/pt-BR/docs/performance"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "id": "community-mode",
+  "title": "community-mode",
+  "description": "🏠 > Community Mode",
+  "source": "@site/docs/community-mode.md",
+  "sourceDirName": ".",
+  "slug": "/community-mode",
+  "permalink": "/Megacubo/docs/community-mode",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/EdenwareApps/Megacubo/tree/main/website/docs/community-mode.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Building",
+    "permalink": "/Megacubo/docs/building"
+  },
+  "next": {
+    "title": "Configuring",
+    "permalink": "/Megacubo/docs/configuring"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "id": "building",
+  "title": "building",
+  "description": "🏠 > Desenvolvimento > Construção",
+  "source": "@site/i18n/pt-BR/docusaurus-plugin-content-docs/current/building.md",
+  "sourceDirName": ".",
+  "slug": "/building",
+  "permalink": "/Megacubo/pt-BR/docs/building",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/EdenwareApps/Megacubo/tree/main/website/docs/building.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "next": {
+    "title": "Community Mode",
+    "permalink": "/Megacubo/pt-BR/docs/community-mode"
+  }
+}

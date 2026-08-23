@@ -1,0 +1,24 @@
+{
+  "id": "contributing",
+  "title": "contributing",
+  "description": "🏠 > IPTV Contribution",
+  "source": "@site/docs/contributing.md",
+  "sourceDirName": ".",
+  "slug": "/contributing",
+  "permalink": "/Megacubo/docs/contributing",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/EdenwareApps/Megacubo/tree/main/website/docs/contributing.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Configuring",
+    "permalink": "/Megacubo/docs/configuring"
+  },
+  "next": {
+    "title": "Developing",
+    "permalink": "/Megacubo/docs/developing"
+  }
+}

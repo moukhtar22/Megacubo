@@ -1,0 +1,24 @@
+{
+  "id": "developing",
+  "title": "developing",
+  "description": "🏠 > IPTV Development",
+  "source": "@site/docs/developing.md",
+  "sourceDirName": ".",
+  "slug": "/developing",
+  "permalink": "/Megacubo/docs/developing",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/EdenwareApps/Megacubo/tree/main/website/docs/developing.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Contributing",
+    "permalink": "/Megacubo/docs/contributing"
+  },
+  "next": {
+    "title": "FAQ",
+    "permalink": "/Megacubo/docs/faq"
+  }
+}

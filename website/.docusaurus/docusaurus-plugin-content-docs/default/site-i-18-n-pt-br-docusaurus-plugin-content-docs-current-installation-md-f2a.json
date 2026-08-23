@@ -1,0 +1,24 @@
+{
+  "id": "installation",
+  "title": "installation",
+  "description": "🏠 > Instalação",
+  "source": "@site/i18n/pt-BR/docusaurus-plugin-content-docs/current/installation.md",
+  "sourceDirName": ".",
+  "slug": "/installation",
+  "permalink": "/Megacubo/pt-BR/docs/installation",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/EdenwareApps/Megacubo/tree/main/website/docs/installation.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Hotkeys",
+    "permalink": "/Megacubo/pt-BR/docs/hotkeys"
+  },
+  "next": {
+    "title": "Introduction",
+    "permalink": "/Megacubo/pt-BR/docs/introduction"
+  }
+}

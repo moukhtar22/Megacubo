@@ -1,0 +1,24 @@
+{
+  "id": "performance",
+  "title": "performance",
+  "description": "🏠 > Performance & Optimization",
+  "source": "@site/i18n/pt-BR/docusaurus-plugin-content-docs/current/performance.md",
+  "sourceDirName": ".",
+  "slug": "/performance",
+  "permalink": "/Megacubo/pt-BR/docs/performance",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/EdenwareApps/Megacubo/tree/main/website/docs/performance.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Legal",
+    "permalink": "/Megacubo/pt-BR/docs/legal"
+  },
+  "next": {
+    "title": "Recommendations",
+    "permalink": "/Megacubo/pt-BR/docs/recommendations"
+  }
+}

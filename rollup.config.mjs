@@ -43,7 +43,7 @@ const rendererPlugins = [
     preprocess: sveltePreprocess(),
     compilerOptions: { css: 'injected', compatibility: { componentApi: 4 } }
   }),
-  babel({ ...babelRendererPolyfills, babelHelpers: 'bundled', extensions: ['.js', '.svelte'], skipPreflightCheck: true }),
+  babel({ ...babelRendererPolyfills, babelHelpers: 'bundled', extensions: ['.js', '.svelte'], skipPreflightCheck: true, configFile: false, babelrc: false }),
   resolve({ 
     browser: true, 
     exportConditions: ['svelte', 'node', 'import', 'default'], 

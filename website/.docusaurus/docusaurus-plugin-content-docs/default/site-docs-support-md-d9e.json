@@ -1,0 +1,24 @@
+{
+  "id": "support",
+  "title": "support",
+  "description": "🏠 > IPTV Support",
+  "source": "@site/docs/support.md",
+  "sourceDirName": ".",
+  "slug": "/support",
+  "permalink": "/Megacubo/docs/support",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/EdenwareApps/Megacubo/tree/main/website/docs/support.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Setup Wizard",
+    "permalink": "/Megacubo/docs/setup-wizard"
+  },
+  "next": {
+    "title": "Troubleshooting",
+    "permalink": "/Megacubo/docs/troubleshooting"
+  }
+}

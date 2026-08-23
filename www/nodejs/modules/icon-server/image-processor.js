@@ -5,10 +5,26 @@ import downloads from '../downloads/downloads.js';
 import { temp } from '../paths/paths.js'
 import { randomBytes } from 'node:crypto'
 
-async function saveBase64Image(dataUrl, outputFilePath) {
+// Some of these codes are transient on Windows (file briefly locked by another
+// handle) and retrying avoids flooding the log with EBUSY/EPERM crashes.
+const RETRYABLE_FS_ERRORS = /EBUSY|EPERM|EACCES|ENOENT/
+
+async function saveBase64Image(dataUrl, outputFilePath, attempts = 3) {
     const base64Data = dataUrl.replace(/^data:image\/\w+;base64,/, "")
     const imageBuffer = Buffer.from(base64Data, 'base64')
-    await fs.promises.writeFile(outputFilePath, imageBuffer)
+    for (let i = 0; i < attempts; i++) {
+        try {
+            await fs.promises.writeFile(outputFilePath, imageBuffer)
+            return
+        } catch (err) {
+            const code = err && err.code || ''
+            if (i < attempts - 1 && RETRYABLE_FS_ERRORS.test(code)) {
+                await new Promise(r => setTimeout(r, 150 * (i + 1)))
+                continue
+            }
+            throw err
+        }
+    }
 }
 
 const imp = {}

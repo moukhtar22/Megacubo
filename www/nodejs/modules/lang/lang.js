@@ -213,9 +213,33 @@ class Language extends EventEmitter {
         return ret;
     }
     parseLanguageHint(hint) {
-        const hints = hint.split(',').map(s => s.trim());
+        const hints = hint.split(',').map(s => s.trim()).filter(Boolean);
         const countries = hints.map(s => s.length === 5 ? s.substr(3).toLowerCase() : false).filter(s => s).unique();
-        const langs = hints.map(s => s.substr(0, 2)).unique();
+        // Generates candidates in priority order: the full tag (e.g. zh-TW)
+        // comes before the 2-letter code (zh), allowing a specific locale
+        // (zh-TW.json) to win over the generic one (zh.json) when the system
+        // is set to Traditional Chinese (zh-TW / zh-Hant / zh-HK / zh-MO).
+        const tags = [];
+        for (const h of hints) {
+            const parts = h.replace(/_/g, '-').split('-').filter(Boolean);
+            const base = (parts[0] || '').toLowerCase();
+            if (!/^[a-z]{2}$/.test(base)) continue;
+            const script = parts.find(p => /^[A-Za-z]{4}$/.test(p)); // Hant, Hans...
+            const region = parts.find(p => /^[A-Za-z]{2}$/.test(p) && p.toLowerCase() !== base); // TW, HK, CN...
+            if (base === 'zh') {
+                if (script && /^Hant$/i.test(script)) tags.push('zh-TW');
+                else if (script && /^Hans$/i.test(script)) tags.push('zh');
+                else if (region && /^(TW|HK|MO)$/i.test(region)) tags.push('zh-TW');
+                else if (region && /^(CN|SG)$/i.test(region)) tags.push('zh');
+                else if (parts.length === 2 && /^(TW|HK|MO)$/i.test(parts[1])) tags.push('zh-TW');
+                else if (parts.length === 2 && /^(CN|SG)$/i.test(parts[1])) tags.push('zh');
+                else if (parts.length === 2) tags.push(base + '-' + parts[1]);
+            } else if (region) {
+                tags.push(base + '-' + region);
+            }
+            tags.push(base);
+        }
+        const langs = tags.unique();
         return { langs, countries };
     }
     async availableLocalesMap() {

@@ -47,9 +47,6 @@ class Diagnostics extends EventEmitter {
                 }
             })
 
-            let perr, publicCategories = await global.channels.channelList.getPublicListsCategories().catch(e => perr = e)
-            if (perr) publicCategories = 'Error: ' + String(perr)
-
             let err, crashlogContent = await crashlog.read().catch(e => err = e)        
             let revision = '10000'
             if(paths.manifest.megacubo && paths.manifest.megacubo.revision) {
@@ -82,8 +79,7 @@ class Diagnostics extends EventEmitter {
             report = {
                 version, revision, diskSpace, freeMem, configs, channelListKey, channelListType,
                 channels: global.channels.channelList.channelsIndex, categories: global.channels.channelList.categories, loaded, 
-                communitySources, listsInfo, listsRequesting, updaterResults, processedLists, processing, tuning, crashLog,
-                publicCategories
+                communitySources, listsInfo, listsRequesting, updaterResults, processedLists, processing, tuning, crashLog
             }
             report = JSON.stringify(report, null, 3)
             privateLists.forEach(url => {

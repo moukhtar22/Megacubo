@@ -1,0 +1,24 @@
+{
+  "id": "installation",
+  "title": "installation",
+  "description": "🏠 > Installation",
+  "source": "@site/docs/installation.md",
+  "sourceDirName": ".",
+  "slug": "/installation",
+  "permalink": "/Megacubo/docs/installation",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/EdenwareApps/Megacubo/tree/main/website/docs/installation.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Hotkeys",
+    "permalink": "/Megacubo/docs/hotkeys"
+  },
+  "next": {
+    "title": "Introduction",
+    "permalink": "/Megacubo/docs/introduction"
+  }
+}

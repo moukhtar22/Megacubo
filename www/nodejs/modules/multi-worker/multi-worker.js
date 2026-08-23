@@ -205,6 +205,23 @@ class WorkerDriver extends EventEmitter {
             }
         })
     }
+
+    // After a worker restart the new worker process has no drivers loaded, so
+    // forget the previous "loadWorker sent" tracking and mark the proxies as not
+    // loaded. This makes the proxy re-request loadWorker and queue calls until the
+    // driver is available again.
+    resetDriverState() {
+        this.loadWorkerSent = new Set()
+        for (const file of Object.keys(this.instances)) {
+            const inst = this.instances[file]
+            if (inst && inst !== this) {
+                inst._driverLoaded = false
+            }
+        }
+        // Keep this.instances intact: the proxies hold event listeners (e.g. EPG
+        // state events) that callers rely on; they are re-used once the driver is
+        // reloaded by the new worker.
+    }
     retryAll(file) {
         if (!this.worker) {
             console.warn('Cannot retry calls, worker not available');
@@ -513,6 +530,7 @@ class WorkerDriver extends EventEmitter {
         }
         
         this.processingCalls.clear();
+        this.resetDriverState();
         
         // Reinitialize worker
         if (!this.finished) {
@@ -718,23 +736,25 @@ export default class ThreadWorkerDriver extends WorkerDriver {
         this.worker.on('error', err => {
             let serr = String(err);
             this.err = err;
-            console.error('error ' + err + ' ' + serr + ' ' + JSON.stringify(this.instances, null, 3), { err, serr });
+            console.error('Worker error:', serr, '\n', err.stack || err);
             if (serr.match(new RegExp('(out of memory|out_of_memory)', 'i'))) {
                 this.finished = true;
                 let msg = 'Worker exited out of memory, fix the settings and restart the app.';
                 osd.show(msg, 'fas fa-exclamation-triangle faclr-red', 'out-of-memory', 'long');
             }
-            if (typeof(err.preventDefault) == 'function') {
-                err.preventDefault();
-            }
             crashlog.save('Worker error: ', err);
-            this.rejectAll(null, 'worker exited out of memory');
-        }, true, true);
+            this.rejectAll(null, serr);
+        }, true);
         this.worker.on('exit', () => {
             const wasOOM = this.err && String(this.err).match(new RegExp('(out of memory|out_of_memory)', 'i'));
             this.worker = null;
             this.workerReady = false;
             this.lastWorkerExitTime = Date.now();
+            // The new worker process starts with no drivers loaded; reset the proxy
+            // state so loadWorker is re-sent and calls are queued until it is ready.
+            // Without this, calls like setChannelTermsIndex fail with
+            // "worker not found method" after a restart.
+            this.resetDriverState();
             console.error('Worker exited', this.err, Object.keys(this.instances));
             this.rejectAll(null, this.err || 'worker exited');
             
@@ -870,6 +890,14 @@ export default class ThreadWorkerDriver extends WorkerDriver {
                 const name = this.resolve(ret.file)
                 this.debug && console.log('🔍 MultiWorker: Resolving event:', { name, hasInstance: !!this.instances[name], args })
                 
+                // Safety: never emit 'error' as an EventEmitter error event - it causes
+                // ERR_UNHANDLED_ERROR if no listener is registered. Worker error logs
+                // use 'worker-error:' prefix (sent via logErr), handle them as console events.
+                if (args[0] === 'error' || args[0] === 'worker-error') {
+                    console.error('[WorkerError]', args[1] || args[0])
+                    return
+                }
+
                 // IPC sync events should ALWAYS be emitted on the driver (not instance)
                 // so that bindChangeListeners() can intercept them for cross-process sync
                 if (args[0] == 'storage-touch' || args[0] == 'config-change') {

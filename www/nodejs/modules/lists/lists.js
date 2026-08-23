@@ -67,6 +67,26 @@ class ListsEPGTools extends Index {
         this.additionalEPGsCooldown = 30000 // 30 seconds cooldown between attempts
         this.initializeEPG().catch(err => console.error('❌ Error initializing EPG:', err))
     }
+
+    /**
+     * Coalesce rapid successive calls to setChannelTermsIndex (boot, grid
+     * switching, config changes) into a single IPC call to the EPG worker.
+     * Without this, dozens of pending calls can pile up and time out after
+     * 120s when the worker is busy parsing EPGs, and flood the log with
+     * 'IPC timeout (setChannelTermsIndex)' / 'worker not found method'.
+     */
+    applyChannelTermsIndex() {
+        if (this._channelTermsTimer) clearTimeout(this._channelTermsTimer)
+        this._channelTermsTimer = setTimeout(() => {
+            this._channelTermsTimer = null
+            const idx = global.channels?.channelList?.channelsIndex
+            if (!idx) return
+            this.epg.setChannelTermsIndex(idx).catch(err => {
+                // Worker may be busy or restarting; non-fatal, will be re-applied
+                console.warn('setChannelTermsIndex (coalesced) failed:', err?.message || err)
+            })
+        }, 250)
+    }
     
     async initializeEPG() {
 
@@ -77,7 +97,9 @@ class ListsEPGTools extends Index {
         
         // Set channel terms index when EPG starts
         const channelTerms = global.channels?.channelList?.channelsIndex
-        if (channelTerms) await this.epg.setChannelTermsIndex(channelTerms)
+        if (channelTerms) await this.epg.setChannelTermsIndex(channelTerms).catch(err => {
+            console.warn('setChannelTermsIndex (init) failed:', err?.message || err)
+        })
 
         // Wait for EPG worker to be fully loaded before calling start()
         await new Promise(resolve => {
@@ -185,11 +207,8 @@ class ListsEPGTools extends Index {
             const key = 'epg-'+ lang.locale
             if(keys.includes(key) || keys.includes('locale')) {
                 this.epg.sync(config.get(key) || []).catch(err => console.error(err))
-                // Reapply channel terms index on EPG config/locale change
-                const idx = global.channels?.channelList?.channelsIndex
-                if (idx) {
-                    this.epg.setChannelTermsIndex(idx)
-                }
+                // Reapply channel terms index on EPG config/locale change (coalesced)
+                this.applyChannelTermsIndex()
             }
             
             // Detect changes in epg-suggestions configuration
@@ -199,11 +218,8 @@ class ListsEPGTools extends Index {
                 this.epg.toggleSuggestedEPGs(suggestionsEnabled).catch(err => {
                     console.error('❌ Error toggling suggested EPGs:', err)
                 })
-                // Reapply channel terms index when suggestions setting changes
-                const idx = global.channels?.channelList?.channelsIndex
-                if (idx) {
-                    this.epg.setChannelTermsIndex(idx)
-                }
+                // Reapply channel terms index when suggestions setting changes (coalesced)
+                this.applyChannelTermsIndex()
                 if (suggestionsEnabled) {
                     this.epgSuggest().catch(err => console.error('❌ Error suggesting EPGs:', err))
                 }
@@ -213,10 +229,8 @@ class ListsEPGTools extends Index {
         // Reapply terms whenever channels finish loading (covers auto grid switching public/community)
         global.channels.on('loaded', changed => {
             if (changed) {
-                const idx = global.channels?.channelList?.channelsIndex
-                if (idx) {
-                    this.epg.setChannelTermsIndex(idx)
-                }
+                // Coalesced: avoids flooding the EPG worker during grid switching
+                this.applyChannelTermsIndex()
             }
         })
 
@@ -240,14 +254,6 @@ class ListsEPGTools extends Index {
                 this.epgReadyListeners.push(resolve)
             }
         })
-    }
-    epgChannelsListSanityScore(data) {
-        let count = Object.keys(data).length, idealCatCount = 8;
-        if (count < 3) { // too few categories
-            return 0;
-        }
-        let c = Math.abs(count - idealCatCount);
-        return 100 - c;
     }
     async epgChannelsList(channelsList, limit) {
         let data, ret = this.epg.state
@@ -370,66 +376,6 @@ class ListsEPGTools extends Index {
         ).catch(err => {
             console.warn('EPG searchChannel timeout/error:', err.message || err);
             return {};
-        })
-    }
-    async epgLiveNowChannelsList() {
-        
-        const cacheKey = 'epg-live-now-channels-list'
-        const cacheKeyFallback = 'epg-live-now-channels-list-fallback'
-        const anyCache = () => storage.get(cacheKeyFallback, {throwIfMissing: true})
-        const validCache = () => storage.get(cacheKey, {throwIfMissing: true})
-        
-        if (!this.epg.loaded) {
-            return anyCache().catch(() => {
-                return {categories: {}}
-            })
-        }
-
-        const cached = await validCache().catch(() => null) // not expired cache
-        let data = cached || await trackPromise(
-            this.epg.liveNowChannelsList(),
-            'epgLiveNowChannelsList()',
-            20000
-        ).catch(err => {
-            console.warn('EPG liveNowChannelsList timeout/error:', err.message || err);
-            return { categories: {} };
-        })
-        if (data?.categories && Object.keys(data['categories']).length) {
-            try {
-                let names = Object.keys(data['categories']).filter(c => c.length > 1).filter(c => this.parentalControl.allow(c))
-                const clusters = await global.recommendations.reduceTags(names, {amount: 43})
-                if (clusters && Object.keys(clusters).length) {
-                    const categories = {}
-                    for(const name in clusters) {
-                        categories[name] = []
-                        for(const category of clusters[name]) {
-                            categories[name].push(...data['categories'][category])
-                        }
-                    }
-                    for(const name of Object.keys(categories).sort()) {
-                        categories[name] = [...new Set(categories[name])].sort().filter(c => c.length > 1).filter(c => this.parentalControl.allow(c))
-                    }
-                    if(Object.keys(categories).length) {
-                        data.categories = categories
-                        if(!data.updateAfter || data.updateAfter > 600) {
-                            data.updateAfter = 600;
-                        }
-                    }
-                }
-            } catch(e) {
-                console.error(e)
-            }
-
-            if(Object.keys(data.categories).length) {
-                await Promise.allSettled([
-                    storage.set(cacheKey, data, {ttl: 120}).catch(err => console.error(err)),
-                    storage.set(cacheKeyFallback, data, {expiration: true}).catch(err => console.error(err))
-                ])
-                return data
-            }
-        }
-        return anyCache().catch(() => {
-            return {categories: {}}
         })
     }
     epgScore(url) {
@@ -571,8 +517,8 @@ class Lists extends ListsEPGTools {
             global.channels.on('loaded', changed => {
                 if (changed) {
                     this._relevantKeywords = null
-                    const idx = global.channels?.channelList?.channelsIndex
-                    if (idx) this.epg.setChannelTermsIndex(idx)
+                    // Coalesce re-application (covers auto grid switching public/community)
+                    this.applyChannelTermsIndex()
                 }
             })
         });
@@ -1691,18 +1637,6 @@ class Lists extends ListsEPGTools {
         }
     }
     
-    destroy() {
-        if (this.metaCheckInterval) {
-            clearInterval(this.metaCheckInterval);
-            this.metaCheckInterval = null;
-        }
-        if (this.stateInterval) {
-            clearInterval(this.stateInterval);
-            this.stateInterval = null;
-        }
-        this.removeAllListeners();
-    }
-    
     cleanupStuckStates() {
         // Clean up any stuck states that might prevent processing
         const now = Date.now();
@@ -1772,104 +1706,6 @@ class Lists extends ListsEPGTools {
         }
         
         return 0;
-    }
-    
-    // Public method to force check and fix missing meta files
-    async forceCheckAndFixMissingMeta() {
-        console.log('Forcing check and fix for missing meta files...');
-        
-        try {
-            // Check loaded lists first
-            const loadedListsFixed = await this.checkAndFixLoadedListsWithMissingMeta();
-            
-            // Check all URLs (including cached ones)
-            const allUrls = Object.keys(this.lists).concat(this.myLists);
-            const cachedFixed = await this.scheduleUpdateForMissingMeta(allUrls);
-            
-            const totalFixed = loadedListsFixed + cachedFixed.length;
-            
-            if (totalFixed > 0) {
-                console.log(`Fixed ${totalFixed} lists with missing meta files`);
-            } else {
-                console.log('No lists with missing meta files found');
-            }
-            
-            return totalFixed;
-        } catch (err) {
-            console.error('Error in force check and fix:', err);
-            return 0;
-        }
-    }
-    
-    // Public method to force re-indexing of lists with empty indexes
-    async forceReindexEmptyLists() {
-        console.log('🔍 Checking for lists with empty indexes...');
-        
-        const emptyLists = [];
-        for (const url in this.lists) {
-            const list = this.lists[url];
-            const index = await list.index;
-            
-            if ((index.length ?? 0) === 0) {
-                console.log(`❌ Empty list found: ${url}`);
-                console.log(`   Index: ${JSON.stringify(index)}`);
-                emptyLists.push(url);
-            } else {
-                console.log(`✅ List OK: ${url} (${index.length ?? 0} streams)`);
-            }
-        }
-        
-        console.log(`📊 Found ${emptyLists.length} lists with empty indexes`);
-        
-        if (emptyLists.length > 0) {
-            console.log('\n🔧 Fixing empty lists by forcing re-indexing...');
-            
-            for (const url of emptyLists) {
-                try {
-                    console.log(`\n🔄 Re-indexing: ${url}`);
-                    
-                    // Remove the list from memory
-                    this.remove(url);
-                    
-                    // Force re-indexing by calling the loader
-                    await this.loader.addListNow(url, {
-                        progress: (progress) => {
-                            console.log(`   Progress: ${progress}%`);
-                        },
-                        timeout: 60000 // 60 seconds timeout
-                    });
-                    
-                    console.log(`✅ Successfully re-indexed: ${url}`);
-                    
-                    // Check the new index
-                    const newList = this.lists[url];
-                    if (newList) {
-                        const newIndex = await newList.index;
-                        console.log(`   New index: ${JSON.stringify(newIndex)}`);
-                    }
-                    
-                } catch (error) {
-                    console.error(`❌ Failed to re-index ${url}:`, error.message);
-                }
-            }
-            
-            console.log('\n✅ Re-indexing completed!');
-            
-            // Final check
-            console.log('\n🔍 Final verification:');
-            for (const url of emptyLists) {
-                const list = this.lists[url];
-                if (list) {
-                    const index = await list.index;
-                    console.log(`${url}: ${index.length ?? 0} streams`);
-                }
-            }
-            
-            return emptyLists.length;
-        } else {
-            console.log('✅ All lists have proper indexes!');
-            return 0;
-        }
     }
     
     async getCachedRelevance(url) {

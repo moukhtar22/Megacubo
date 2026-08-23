@@ -1,0 +1,24 @@
+{
+  "id": "using-iptv-lists",
+  "title": "using-iptv-lists",
+  "description": "🏠 > Using IPTV Lists",
+  "source": "@site/docs/using-iptv-lists.md",
+  "sourceDirName": ".",
+  "slug": "/using-iptv-lists",
+  "permalink": "/Megacubo/docs/using-iptv-lists",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/EdenwareApps/Megacubo/tree/main/website/docs/using-iptv-lists.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "UI Overview",
+    "permalink": "/Megacubo/docs/ui-overview"
+  },
+  "next": {
+    "title": "Watching Live TV",
+    "permalink": "/Megacubo/docs/watching-live-tv"
+  }
+}

@@ -146,9 +146,11 @@ process.on('unhandledRejection', (reason, promise) => {
 process.on('uncaughtException', exception => {
     const msg = 'uncaughtException: ' + exception.name + ' | ' + exception.message + ' | ' + stringify(exception.stack)
     console.error(msg)
-    crashlog.save(msg)
     logErr(msg)
-    return false
+    // Terminate the worker cleanly after an uncaught exception - the parent will
+    // detect the exit and restart if needed. Continuing in an unstable state
+    // can cause cascading errors (e.g. ERR_UNHANDLED_ERROR on the parent side).
+    setImmediate(() => process.exit(1))
 })
 
 global.__storageTouchBridge = (msg) => {

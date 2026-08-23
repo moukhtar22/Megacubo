@@ -1,0 +1,24 @@
+{
+  "id": "recommendations",
+  "title": "recommendations",
+  "description": "🏠 > Recommendations System",
+  "source": "@site/i18n/pt-BR/docusaurus-plugin-content-docs/current/recommendations.md",
+  "sourceDirName": ".",
+  "slug": "/recommendations",
+  "permalink": "/Megacubo/pt-BR/docs/recommendations",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/EdenwareApps/Megacubo/tree/main/website/docs/recommendations.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Performance",
+    "permalink": "/Megacubo/pt-BR/docs/performance"
+  },
+  "next": {
+    "title": "Setup Wizard",
+    "permalink": "/Megacubo/pt-BR/docs/setup-wizard"
+  }
+}

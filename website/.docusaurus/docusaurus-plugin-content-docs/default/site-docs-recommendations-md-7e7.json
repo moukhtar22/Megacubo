@@ -1,0 +1,24 @@
+{
+  "id": "recommendations",
+  "title": "recommendations",
+  "description": "🏠 > Recommendations System",
+  "source": "@site/docs/recommendations.md",
+  "sourceDirName": ".",
+  "slug": "/recommendations",
+  "permalink": "/Megacubo/docs/recommendations",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/EdenwareApps/Megacubo/tree/main/website/docs/recommendations.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Performance",
+    "permalink": "/Megacubo/docs/performance"
+  },
+  "next": {
+    "title": "Setup Wizard",
+    "permalink": "/Megacubo/docs/setup-wizard"
+  }
+}

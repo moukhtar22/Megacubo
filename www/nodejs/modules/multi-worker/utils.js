@@ -27,7 +27,7 @@ export default file => {
         postMessage({id: 0, file, type: 'event', data: type +':'+ JSON.stringify(content)})
     }    
     const logErr = data => {
-        postMessage({id: 0, file, type: 'event', data: 'error:'+ JSON.stringify(data)})
+        postMessage({id: 0, file, type: 'event', data: 'worker-error:'+ JSON.stringify(data)})
     }
     return {logErr, postMessage, parentPort, emit, loadGlobalVars }
 }

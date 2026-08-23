@@ -1,0 +1,24 @@
+{
+  "id": "legal",
+  "title": "legal",
+  "description": "🏠 > Legal Notice",
+  "source": "@site/docs/legal.md",
+  "sourceDirName": ".",
+  "slug": "/legal",
+  "permalink": "/Megacubo/docs/legal",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/EdenwareApps/Megacubo/tree/main/website/docs/legal.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Introduction",
+    "permalink": "/Megacubo/docs/introduction"
+  },
+  "next": {
+    "title": "Performance",
+    "permalink": "/Megacubo/docs/performance"
+  }
+}

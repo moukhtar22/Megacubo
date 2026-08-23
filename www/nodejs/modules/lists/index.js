@@ -320,8 +320,6 @@ class Index extends Common {
             }
         }
         
-        console.log('[multiSearch] scoreMap:', JSON.stringify(scoreMap), '| lists count:', Object.keys(this.lists).length);
-        
         // Search in all lists using score() method
         for (const url of Object.keys(this.lists)) {
             tasks.push(limiter(async () => {
@@ -335,16 +333,12 @@ class Index extends Common {
                         return;
                     }
                     
-                    console.log('[multiSearch] querying:', url.slice(0,70), '| terms:', Object.keys(scoreMap).join(','));
-                    
                     // OPTIMIZATION: Use score() method for faster multi-term search
                     const scoredResults = await this.lists[url].indexer.db.score('nameTerms', scoreMap, {
                         limit: limitPerList,
                         sort: 'desc',
                         includeScore: true
                     });
-                    
-                    console.log('[multiSearch] scoredResults:', scoredResults?.length, 'entries from', url.slice(0,50));
                     
                     // Also check groupTerms if group search is enabled
                     if (opts.group) {
@@ -406,18 +400,13 @@ class Index extends Common {
         
         await Promise.allSettled(tasks);
         
-        console.log('[multiSearch] allResults after all lists:', allResults.length, '| seenUrls size:', seenUrls.size);
-        
         // Sort by score and get top results
         const results = allResults
             .sort((a, b) => (b.score || 0) - (a.score || 0))
             .slice(0, limit);
         
-        console.log('[multiSearch] after sort/slice:', results.length, '| passing to adjustSearchResults');
-        
         // Apply same type filtering as search() does in adjustSearchResults
         const finalResults = this.adjustSearchResults(results, opts, limit);
-        console.log('[multiSearch] final:', finalResults.length);
         return finalResults;
     }
     parseQuery(terms, opts) {

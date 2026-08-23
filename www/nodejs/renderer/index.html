@@ -134,25 +134,41 @@
             // CRITICAL: Early shims - MUST execute before any other code
             // These prevent crashes when native code fires events before JS is ready
             
-            // 1. Shim for window.Capacitor.triggerEvent (prevent native crash)
+            // 1. Guard for Capacitor.triggerEvent (prevent native crash)
+            // Must run before any Capacitor native bridge code executes.
+            // Uses Object.defineProperty so window.Capacitor can NEVER be undefined,
+            // and triggerEvent always exists as a function, even if native bridge
+            // reassigns or overwrites the property later.
             (function(){
-                'use strict';
-                var defineCapacitorShim = function(global) {
-                    if (!global) return;
-                    if (!global.Capacitor) {
-                        global.Capacitor = {};
-                    }
-                    if (typeof global.Capacitor.triggerEvent !== 'function') {
-                        global.Capacitor.triggerEvent = function(){
-                            // Silent no-op: will be replaced by native-bridge.js when it loads
-                        };
-                    }
-                };
-                // Try multiple global objects (for maximum compatibility)
-                try { defineCapacitorShim((function(){ return this; })()); } catch(e) {}
-                try { defineCapacitorShim(window); } catch(e) {}
-                try { defineCapacitorShim(self); } catch(e) {}
-                try { defineCapacitorShim(globalThis); } catch(e) {}
+                var _cap = window.Capacitor;
+                if (!_cap || typeof _cap.triggerEvent !== 'function') {
+                    _cap = _cap || {};
+                    _cap.triggerEvent = _cap.triggerEvent || function(){};
+                }
+                try {
+                    Object.defineProperty(window, 'Capacitor', {
+                        get: function() { return _cap; },
+                        set: function(v) {
+                            if (v && typeof v === 'object') {
+                                _cap = v;
+                                if (typeof _cap.triggerEvent !== 'function') {
+                                    _cap.triggerEvent = function(){};
+                                }
+                            }
+                            // Ignore falsy assignments (undefined/null)
+                        },
+                        configurable: true,
+                        enumerable: true
+                    });
+                } catch(e) {
+                    // Fallback if Object.defineProperty fails on very old browsers
+                    window.Capacitor = _cap;
+                }
+                // Also guard self for worker contexts
+                try { if (typeof self !== 'undefined' && self !== window) {
+                    self.Capacitor = self.Capacitor || {};
+                    self.Capacitor.triggerEvent = self.Capacitor.triggerEvent || function(){};
+                } } catch(e) {}
             })();
             
             // 2. Shim for globalThis (Chrome 68 doesn't support it, added in Chrome 71)
@@ -309,8 +325,11 @@
                     if(!metrics || typeof(metrics.bottom) == 'undefined') return
                     splashProgressDiv.style.bottom = metrics.bottom + 'px'
                 }
-                plugins.megacubo.once('metrics', splashMetrics)
-                splashMetrics(plugins.megacubo.metrics)
+                // Use window.plugins (Cordova global) to avoid ReferenceError if bridge not ready
+                if (typeof window.plugins !== 'undefined' && window.plugins.megacubo) {
+                    window.plugins.megacubo.once('metrics', splashMetrics)
+                    splashMetrics(window.plugins.megacubo.metrics)
+                }
             }
             const load = () => {
                 loadScript('./dist/App.js', () => {

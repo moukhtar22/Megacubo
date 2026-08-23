@@ -7,10 +7,9 @@ import { SmartCache } from './SmartCache.mjs'
  * Intelligent recommendations using AI Client
  */
 export class EnhancedRecommendations extends EventEmitter {
-    constructor(aiClient) {
+    constructor() {
         super()
         this.debug = false
-        this.aiClient = aiClient
         // AITagExpansion disabled - server no longer provides valid expansions
         // SemanticContentDiscovery removed - not used
         // TriasLearningSystem removed - learning not needed with AI

@@ -14,6 +14,20 @@ import { randomBytes } from 'node:crypto'
 
 EventEmitter.defaultMaxListeners = 100
 
+const mimes = {
+    '.ico': 'image/x-icon',
+    '.html': 'text/html',
+    '.js': 'text/javascript',
+    '.json': 'application/json',
+    '.css': 'text/css',
+    '.png': 'image/png',
+    '.jpg': 'image/jpeg',
+    '.wav': 'audio/wav',
+    '.mp3': 'audio/mpeg',
+    '.mp4': 'video/mp4',
+    '.svg': 'image/svg+xml'
+}
+
 class BaseChannel extends EventEmitter {
     constructor() {
         super()
@@ -89,19 +103,6 @@ class BridgeServer extends EventEmitter {
             })
         }
         this.closed = false
-        const mimes = {
-            '.ico': 'image/x-icon',
-            '.html': 'text/html',
-            '.js': 'text/javascript',
-            '.json': 'application/json',
-            '.css': 'text/css',
-            '.png': 'image/png',
-            '.jpg': 'image/jpeg',
-            '.wav': 'audio/wav',
-            '.mp3': 'audio/mpeg',
-            '.mp4': 'video/mp4',
-            '.svg': 'image/svg+xml'
-        }
         this.setMaxListeners(20)
         this.server = http.createServer(async (req, response) => {
             const parsedUrl = url.parse(req.url, false)

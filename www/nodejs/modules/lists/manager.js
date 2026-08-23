@@ -448,6 +448,8 @@ class Manager extends ManagerFetch {
         this.inputMemory = {}
         this.communityRetryPromptOpen = false;
         this.publicRetryPromptOpen = false;
+        this.publicStartupStartedAt = Date.now();
+        this.publicStartupRetryInFlight = false;
 		this.noListsAutoRetryState = {
 			attempts: 0,
 			timer: null,
@@ -554,6 +556,32 @@ class Manager extends ManagerFetch {
         // only show when public lists are actually active
         const publicActive = config.get('public-lists');
         if (!publicActive) {
+            return;
+        }
+        // Defensive: never show the "no public lists" dialog if any own/public
+        // list is already loaded (origins are 'own', 'public' or 'community')
+        if (this.master.loadedListsCount('own') > 0 || this.master.loadedListsCount('public') > 0) {
+            return;
+        }
+
+        // A transient discovery failure during startup should not interrupt boot.
+        if (Date.now() - this.publicStartupStartedAt < 10000) {
+            if (this.publicStartupRetryInFlight) {
+                return;
+            }
+            this.publicStartupRetryInFlight = true;
+            try {
+                await new Promise(resolve => setTimeout(resolve, 500));
+                if (Date.now() - this.publicStartupStartedAt < 10000 &&
+                    this.master.loadedListsCount('own') === 0 &&
+                    this.master.loadedListsCount('public') === 0) {
+                    await this.master.loader.reset();
+                }
+            } catch (err) {
+                console.error('public startup retry failed:', err);
+            } finally {
+                this.publicStartupRetryInFlight = false;
+            }
             return;
         }
 

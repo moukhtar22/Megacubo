@@ -330,6 +330,7 @@ class CloudConfiguration extends EventEmitter {
             data = await storage.get(cacheKey)
             if (data) {
                 this.debug && console.log(`Cache hit for ${key}`)
+                this.emit('sync:' + key, data)
                 return data
             }
 
@@ -375,10 +376,47 @@ class CloudConfiguration extends EventEmitter {
         try {
             // Wait for the fetch or timeout
             data = await fetchPromise
+            if (data !== undefined && data !== null) {
+                this.emit('sync:' + key, data)
+            }
             return data
         } catch (error) {
             this.debug && console.log(`Error retrieving data for ${key}`, error)
             throw error
+        }
+    }
+
+    /**
+     * Subscribe to a cloud configuration key and receive updates whenever
+     * the data is fetched (from cache or network).
+     * 
+     * @param {string} key - Configuration key to watch (e.g., 'configure')
+     * @param {Function} callback - Called with the data every time it's retrieved
+     * @param {Object} [options] - Optional options passed to the initial get() call
+     * @returns {Function} - Unsubscribe function to stop listening
+     */
+    sync(key, callback, options = {}) {
+        const handler = (data) => {
+            try {
+                callback(data)
+            } catch (err) {
+                console.error(`[cloud.sync] Error in callback for "${key}":`, err)
+            }
+        }
+        this.on('sync:' + key, handler)
+
+        // get() já emite 'sync:key' ao obter dados (cache ou rede), então o
+        // handler acima será chamado automaticamente. Mas se get() falhar
+        // (sem cache, sem rede, sem fallback), chamamos o callback com o
+        // fallback para garantir a 1ª chamada.
+        this.get(key, options).catch(() => {
+            const fallback = options.fallback !== undefined ? options.fallback : null
+            callback(fallback)
+        })
+
+        // Return unsubscribe function
+        return () => {
+            this.off('sync:' + key, handler)
         }
     }
 

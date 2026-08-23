@@ -1,0 +1,24 @@
+{
+  "id": "setup-wizard",
+  "title": "setup-wizard",
+  "description": "🏠 > IPTV Setup Wizard",
+  "source": "@site/docs/setup-wizard.md",
+  "sourceDirName": ".",
+  "slug": "/setup-wizard",
+  "permalink": "/Megacubo/docs/setup-wizard",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/EdenwareApps/Megacubo/tree/main/website/docs/setup-wizard.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Recommendations",
+    "permalink": "/Megacubo/docs/recommendations"
+  },
+  "next": {
+    "title": "Support",
+    "permalink": "/Megacubo/docs/support"
+  }
+}

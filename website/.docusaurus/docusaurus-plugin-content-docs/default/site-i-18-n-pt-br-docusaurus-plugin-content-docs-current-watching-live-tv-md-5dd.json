@@ -1,0 +1,20 @@
+{
+  "id": "watching-live-tv",
+  "title": "watching-live-tv",
+  "description": "🏠 > Assistindo TV ao Vivo",
+  "source": "@site/i18n/pt-BR/docusaurus-plugin-content-docs/current/watching-live-tv.md",
+  "sourceDirName": ".",
+  "slug": "/watching-live-tv",
+  "permalink": "/Megacubo/pt-BR/docs/watching-live-tv",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/EdenwareApps/Megacubo/tree/main/website/docs/watching-live-tv.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Using IPTV Lists",
+    "permalink": "/Megacubo/pt-BR/docs/using-iptv-lists"
+  }
+}

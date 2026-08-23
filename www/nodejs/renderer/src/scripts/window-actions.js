@@ -71,8 +71,8 @@ class WindowActions extends EventEmitter {
 	restart(){
 		let next = auto => {
 			if(auto === true){
-				if(typeof(plugins) != 'undefined' && plugins.megacubo){ // android
-					return plugins.megacubo.restartApp()
+				if(typeof window.plugins !== 'undefined' && window.plugins.megacubo){ // android
+					return window.plugins.megacubo.restartApp()
 				} else if(parent.Manager) {
 					parent.electron.restart()
 					return

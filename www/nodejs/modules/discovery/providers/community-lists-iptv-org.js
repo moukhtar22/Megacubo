@@ -19,6 +19,12 @@ export default class CommunityListsIPTVORG extends EventEmitter {
         this.ready = ready()
         this.countries = countries;
         this.forceRefreshFlag = false;
+
+        // Mantém this.data['sources'] sempre atualizado via cloud.sync
+        this._unsubConfigure = cloud.sync('configure', c => {
+            this.data = (c && c['sources']) || {};
+        });
+
         this.load().catch(err => console.error(err));
         renderer.ready(() => menu.addFilter(this.hook.bind(this)));
     }
@@ -34,9 +40,8 @@ export default class CommunityListsIPTVORG extends EventEmitter {
         const noData = !Object.keys(this.data).length;
         if (noData || force || this.forceRefreshFlag) {
             const cloudOpts = (force || this.forceRefreshFlag) ? { bypassCache: true } : undefined;
-            await cloud.get('configure', cloudOpts).then(c => {
-                this.data = c['sources'] || {};
-            }).catch(err => console.error(err));
+            await cloud.get('configure', cloudOpts).catch(err => console.error(err));
+            // data updated by sync callback automatically
         }
         this.forceRefreshFlag = false;
         this.ready.done()

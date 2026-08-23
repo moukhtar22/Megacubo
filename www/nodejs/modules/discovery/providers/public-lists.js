@@ -101,6 +101,19 @@ class PublicLists extends EventEmitter {
         this.id = 'public-lists'
         this.ready = ready()
         this.countries = countries
+
+        this._unsubConfigure = cloud.sync('configure', c => {
+            if (c && c['Free-IPTV-Extras']) {
+                Object.keys(c['Free-IPTV-Extras']).forEach(code => {
+                    const url = c['Free-IPTV-Extras'][code];
+                    if (!this.data[code]) this.data[code] = [];
+                    if (!this.data[code].includes(url)) {
+                        this.data[code].push(url);
+                    }
+                });
+            }
+        });
+
         this.load().catch(err => console.error(err))
         renderer.ready(async () => {
             global.menu.addFilter(this.hook.bind(this))
@@ -171,7 +184,7 @@ class PublicLists extends EventEmitter {
                                 raw: true,
                                 fetch: true,
                                 expand: true,
-                                silent: silent === true // for channels.getPublicListsCategories()
+                                silent: silent === true
                             }).catch(e => err = e)
                             if (Array.isArray(es)) {
                                 ret.push(...es.filter(e => e.name != lang.EMPTY));

@@ -219,7 +219,7 @@ class Joiner extends Downloader {
             data = Buffer.concat(this.workerMessageBuffer);
             this.workerMessageBuffer = [];
         }
-        this.processor.push(data);
+        this.processor.push(data).catch(err => this._workerCallError('push', err))
     }
     flush(force) {
         if (!this.processor || this.destroyed || this.joinerDestroyed) return
@@ -228,10 +228,18 @@ class Joiner extends Downloader {
             if (this.workerMessageBuffer.length > 0) {
                 const data = Buffer.concat(this.workerMessageBuffer);
                 this.workerMessageBuffer = []
-                this.processor.push(data)
+                this.processor.push(data).catch(err => this._workerCallError('push', err))
             }
         }
-        this.processor.flush(force)
+        this.processor.flush(force).catch(err => this._workerCallError('flush', err))
+    }
+    // Tolerate expected errors from a terminated/restarting worker (do not surface as unhandled rejections)
+    _workerCallError(op, err) {
+        const msg = String(err && err.message || err)
+        if (/terminated|destroyed|not found|exited/i.test(msg)) {
+            return
+        }
+        console.error(`mpegts worker ${op} error:`, err)
     }
     output(data, len) {
         if (this.destroyed || this.joinerDestroyed) {

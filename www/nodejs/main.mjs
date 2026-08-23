@@ -451,7 +451,11 @@ const setupRendererHandlers = () => {
         if (name) {            
             const e = { name, url: mega.build(name) }
             if (isStreamerReady) {
-                streamer.play(e)
+                streamer.play(e).catch(err => {
+                    if (err !== 'another play intent in progress') {
+                        console.error('streamer.play error:', err)
+                    }
+                })
             } else {
                 playOnLoaded = e
             }
@@ -486,7 +490,11 @@ const setupRendererHandlers = () => {
         if (!streamer.active) {
             await lists.ready().catch(err => console.error(err))
             if (playOnLoaded) {
-                streamer.play(playOnLoaded)
+                streamer.play(playOnLoaded).catch(err => {
+                    if (err !== 'another play intent in progress') {
+                        console.error('streamer.play error:', err)
+                    }
+                })
             } else if (config.get('resume')) {
                 if (menu.path) {
                     console.log('resume skipped, user navigated away')
@@ -821,7 +829,11 @@ const init = async (locale, timezone) => {
                     if (typeof (e.action) == 'function') { // execute action for stream, if any
                         callAction(e)
                     } else {
-                        streamer.play(e)
+                        streamer.play(e).catch(err => {
+                            if (err !== 'another play intent in progress') {
+                                console.error('streamer.play error:', err)
+                            }
+                        })
                     }
                     break
                 case 'input':
@@ -846,7 +858,11 @@ const init = async (locale, timezone) => {
                             streamer.tuning = null
                         }
                         streamer.zap.setZapping(false, null, true)
-                        streamer.play(e)
+                        streamer.play(e).catch(err => {
+                            if (err !== 'another play intent in progress') {
+                                console.error('streamer.play error:', err)
+                            }
+                        })
                     }
                     break
             }
@@ -854,8 +870,19 @@ const init = async (locale, timezone) => {
     })
     setupRendererHandlers()
     options.on('devtools-open', () => {
+        if (process.platform == 'android') {
+            console.warn('DevTools: Not available on Android')
+            return
+        }
         const { BrowserWindow } = electron
-        BrowserWindow.getAllWindows().shift().openDevTools()
+        if (!BrowserWindow || typeof BrowserWindow.getAllWindows !== 'function') {
+            console.warn('DevTools: BrowserWindow unavailable on this platform')
+            return
+        }
+        const win = BrowserWindow.getAllWindows().shift()
+        if (win && typeof win.openDevTools === 'function') {
+            win.openDevTools()
+        }
     })
     recommendations.on('updated', () => {
         console.log('🔄 Recommendations updated. Now: ' + parseInt(new Date().getTime()/1000))
